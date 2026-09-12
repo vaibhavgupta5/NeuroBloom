@@ -24,13 +24,14 @@ export default function ConcentrationChart() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
     <div className="bg-white/55 backdrop-blur-lg border border-white/60 rounded-3xl p-6 shadow-[0_8px_32px_rgba(74,144,217,0.12),0_2px_8px_rgba(0,0,0,0.05)] h-full flex flex-col">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="font-nunito font-bold text-xl text-[#1B2D3E]">{child.name}'s Concentration</h2>
+        <h2 className="font-nunito font-bold text-xl text-[#1B2D3E]">{child.name}&apos;s Concentration</h2>
         <span className="bg-[#EBF3FC] text-[#4A90D9] px-3 py-1 rounded-full text-xs font-bold border border-white">
           This Week
         </span>

@@ -56,7 +56,7 @@ function CalmingScreen({ onClose }) {
       </motion.div>
 
       <p className="font-dm-sans text-[16px] text-[#1B2D3E]/70 absolute bottom-12">
-        You're safe. Take your time. <Heart size={16} className="inline-block text-[#4A90D9] ml-1 mb-0.5" />
+        You&apos;re safe. Take your time. <Heart size={16} className="inline-block text-[#4A90D9] ml-1 mb-0.5" />
       </p>
     </motion.div>
   );

@@ -113,7 +113,7 @@ export default function ParentRemoteControls({ liveSession }) {
       >
         {isPaused ? (
           <>
-            <Play size={18} /> Resume {child.name}'s Gameplay
+            <Play size={18} /> Resume {child.name}&apos;s Gameplay
           </>
         ) : (
           <>

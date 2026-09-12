@@ -146,7 +146,7 @@ export default function HomeScreen() {
           }}
           className="w-full max-w-lg h-[80px] rounded-2xl bg-gradient-to-b from-[#3ECFB2] to-[#2BB89B] flex items-center justify-center font-nunito font-bold text-white text-[22px] shadow-[0_6px_0_#1A9E8C] transition-all mb-4 mx-auto border-2 border-white/20"
         >
-          <span className="mr-2">▶</span> Start Today's Journey
+          <span className="mr-2">▶</span> Start Today&apos;s Journey
         </motion.button>
       )}
 

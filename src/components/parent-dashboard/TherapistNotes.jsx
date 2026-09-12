@@ -38,7 +38,7 @@ export default function TherapistNotes() {
               <span><Stethoscope size={16} /></span> {note.author}
             </div>
             <p className="font-dm-sans italic text-[#1B2D3E]/80 text-sm leading-relaxed">
-              "{note.content}"
+              &quot;{note.content}&quot;
             </p>
           </motion.div>
         ))}

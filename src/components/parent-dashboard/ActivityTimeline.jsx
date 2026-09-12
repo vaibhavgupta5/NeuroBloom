@@ -12,7 +12,7 @@ export default function ActivityTimeline() {
   return (
     <div className="bg-white/55 backdrop-blur-lg border border-white/60 rounded-3xl p-6 shadow-[0_8px_32px_rgba(62,207,178,0.12),0_2px_8px_rgba(0,0,0,0.05)] h-full flex flex-col">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="font-nunito font-bold text-xl text-[#1B2D3E]">Today's Session — June 3</h2>
+        <h2 className="font-nunito font-bold text-xl text-[#1B2D3E]">Today&apos;s Session — June 3</h2>
         <button className="ghost-btn px-4 py-1.5 text-sm">Download Report</button>
       </div>
 

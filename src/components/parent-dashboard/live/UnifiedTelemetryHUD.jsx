@@ -18,10 +18,14 @@ export default function UnifiedTelemetryHUD() {
   const [focusHistory, setFocusHistory] = useState([]);
 
   useEffect(() => {
-    setFocusHistory((prev) => {
-      const next = [...prev, { time: `:${String(prev.length * 5).padStart(2, "0")}`, focus: liveSession.focusScore || 0 }];
-      return next.slice(-8);
-    });
+    const score = liveSession.focusScore || 0;
+    const timer = setTimeout(() => {
+      setFocusHistory((prev) => {
+        const next = [...prev, { time: `:${String(prev.length * 5).padStart(2, "0")}`, focus: score }];
+        return next.slice(-8);
+      });
+    }, 0);
+    return () => clearTimeout(timer);
   }, [liveSession.focusScore]);
 
   const liveFocusTrend = focusHistory.length > 0

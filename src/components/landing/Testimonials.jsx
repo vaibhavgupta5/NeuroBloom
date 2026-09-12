@@ -47,7 +47,7 @@ export default function Testimonials() {
               >
                 {/* Decorative Quote */}
                 <div className="text-[120px] text-[#3ECFB2]/15 font-bold absolute -top-8 left-4 leading-none select-none font-serif">
-                  "
+                  &quot;
                 </div>
 
                 <div className="relative z-10 flex flex-col h-full">
@@ -60,7 +60,7 @@ export default function Testimonials() {
                   </div>
                   
                   <p className="font-dm-sans italic text-lg text-[#1B2D3E] mb-8 leading-relaxed flex-grow">
-                    "{testi.quote}"
+                    &quot;{testi.quote}&quot;
                   </p>
                   
                   <div className="flex items-center gap-4 mt-auto">

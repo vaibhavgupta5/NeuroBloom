@@ -14,7 +14,10 @@ import { useEffect, useRef } from "react";
  */
 export function useSSE(handlers) {
   const handlersRef = useRef(handlers);
-  handlersRef.current = handlers;
+
+  useEffect(() => {
+    handlersRef.current = handlers;
+  });
 
   useEffect(() => {
     const es = new EventSource("/api/stream");

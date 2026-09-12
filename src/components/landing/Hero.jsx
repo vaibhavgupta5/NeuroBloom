@@ -58,7 +58,7 @@ export default function Hero() {
           <div className="w-full md:w-[55%] flex flex-col items-start text-left relative z-20">
             <motion.div variants={fadeUp} className="relative">
               <h1 className="font-nunito font-extrabold text-5xl md:text-[64px] leading-[1.05] text-[#1B2D3E] mb-6 tracking-tight">
-                Where Every Child's Brain Gets to{" "}
+                Where Every Child&apos;s Brain Gets to{" "}
                 <span className="relative inline-block text-[#3ECFB2]">
                   Bloom
                   <svg
@@ -153,7 +153,7 @@ export default function Hero() {
                     <User size={36} className="text-[#4A90D9]" />
                   </div>
                   <div>
-                    <div className="font-nunito font-extrabold text-white text-2xl leading-tight drop-shadow-sm">Leo's Journey</div>
+                    <div className="font-nunito font-extrabold text-white text-2xl leading-tight drop-shadow-sm">Leo&apos;s Journey</div>
                     <div className="font-dm-sans text-sm text-white/90 font-medium tracking-wide bg-black/10 px-3 py-1 rounded-full inline-block mt-2 shadow-sm">ASD & ADHD Support</div>
                   </div>
                 </div>
@@ -162,7 +162,7 @@ export default function Hero() {
               <div className="p-6 space-y-6">
                 <div className="p-5 bg-[#F5FDFC] rounded-2xl border border-[#E8FAF6] shadow-sm relative">
                    <div className="flex justify-between items-center mb-4">
-                     <span className="text-[11px] font-bold text-[#8FA3B1] uppercase tracking-wider">Today's Module</span>
+                     <span className="text-[11px] font-bold text-[#8FA3B1] uppercase tracking-wider">Today&apos;s Module</span>
                      <span className="flex items-center gap-1.5 bg-[#3ECFB2]/10 px-2 py-1 rounded-md text-[10px] text-[#1A9E8C] font-bold">
                        <span className="h-1.5 w-1.5 rounded-full bg-[#3ECFB2] animate-pulse"></span> IN PROGRESS
                      </span>

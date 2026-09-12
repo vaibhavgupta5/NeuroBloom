@@ -15,7 +15,7 @@ export default function ScheduleScreen() {
   return (
     <div className="flex flex-col max-w-5xl mx-auto pb-12 h-full">
       <h1 className="font-nunito font-bold text-[24px] md:text-[32px] text-[#1B2D3E] pt-6 px-4 md:px-8 mb-6 text-center md:text-left">
-        What's happening today 📅
+        What&apos;s happening today 📅
       </h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 px-4 md:px-8 w-full">

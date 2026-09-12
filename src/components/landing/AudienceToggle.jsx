@@ -21,7 +21,7 @@ export default function AudienceToggle() {
           {/* App Header */}
           <div className="bg-gradient-to-r from-[#3ECFB2] to-[#4A90D9] pt-12 pb-6 px-6 text-white relative">
             <div className="flex justify-between items-center mb-4">
-              <div className="font-nunito font-bold text-lg">Leo's Overview</div>
+              <div className="font-nunito font-bold text-lg">Leo&apos;s Overview</div>
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-xl"><User size={20} /></div>
             </div>
             <div className="bg-white/20 rounded-2xl p-3 backdrop-blur-sm border border-white/30 flex items-center gap-3">
@@ -35,7 +35,7 @@ export default function AudienceToggle() {
 
           {/* App Body */}
           <div className="flex-1 bg-[#F5FDFC] p-5 space-y-4">
-            <div className="text-sm font-bold text-[#1B2D3E] mb-2">Today's Progress</div>
+            <div className="text-sm font-bold text-[#1B2D3E] mb-2">Today&apos;s Progress</div>
             <div className="bg-white p-4 rounded-2xl shadow-sm border border-[#E8FAF6]">
               <div className="flex justify-between text-xs text-[#8FA3B1] font-bold mb-2">
                 <span>Attention Span</span>
@@ -119,7 +119,7 @@ export default function AudienceToggle() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center text-center mb-16">
           <span className="font-dm-sans text-[#1A9E8C] font-semibold mb-3 block text-lg bg-[#E8FAF6] px-4 py-1.5 rounded-full">
-            Who It's For
+            Who It&apos;s For
           </span>
           <h2 className="font-nunito font-bold text-3xl md:text-[38px] text-[#1B2D3E] mb-10">
             Built for the Whole Support Circle

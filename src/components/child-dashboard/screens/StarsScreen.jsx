@@ -86,7 +86,7 @@ export default function StarsScreen() {
       </div>
 
       <h2 className="font-nunito font-medium text-[18px] md:text-[24px] text-[#1B2D3E] mb-3 md:mb-4 text-center">
-        You've earned these! <Trophy size={24} className="inline-block text-[#FFB020] ml-2 pb-1" />
+        You&apos;ve earned these! <Trophy size={24} className="inline-block text-[#FFB020] ml-2 pb-1" />
       </h2>
 
       <div className="grid grid-cols-3 md:grid-cols-6 gap-3 md:gap-6 mb-6 md:mb-8 w-full">
@@ -107,7 +107,7 @@ export default function StarsScreen() {
       </div>
 
       <p className="font-nunito font-bold text-[20px] text-[#3ECFB2] text-center mt-auto">
-        You're doing amazing, {child.name}! <Palette size={20} className="inline-block text-[#3ECFB2] ml-1 pb-1" />
+        You&apos;re doing amazing, {child.name}! <Palette size={20} className="inline-block text-[#3ECFB2] ml-1 pb-1" />
       </p>
     </div>
   );

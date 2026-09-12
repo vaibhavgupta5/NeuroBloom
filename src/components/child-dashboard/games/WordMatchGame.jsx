@@ -27,11 +27,16 @@ export default function WordMatchGame() {
   const [currentLevel, setCurrentLevel] = useState(0);
   const [feedback, setFeedback] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
-  const startedAtRef = useRef(Date.now());
+  const startedAtRef = useRef(0);
   const mistakesRef = useRef(0);
   const consecutiveWrongRef = useRef(0); // auto-mode frustration signal
   const emotionTimelineRef = useRef([]);
   const lastSnapshotSentRef = useRef(null);
+
+  useEffect(() => {
+    startedAtRef.current = Date.now();
+  }, []);
+
   const [disabledOption, setDisabledOption] = useState(null); // gentle hint: one wrong option greyed
   const { status: cameraStatus, emotion, emotionConfidence, snapshot, requestCamera } = useCameraEmotion();
   const cameraOn = cameraStatus === 'granted';
@@ -77,7 +82,7 @@ export default function WordMatchGame() {
       gameTitle: "Word Match",
       score: currentLevel,
       targetScore: levels.length,
-      elapsedSeconds: Math.round((Date.now() - startedAtRef.current) / 1000),
+      elapsedSeconds: Math.round(((startedAtRef.current ? Date.now() : Date.now()) - (startedAtRef.current || Date.now())) / 1000),
       focusScore,
       focusStatus: focusScore > 85 ? "Optimal Attention" : "Steady Focus",
       trackingSmoothness: mistakesRef.current === 0 ? "High Precision" : "Steady",
@@ -88,12 +93,12 @@ export default function WordMatchGame() {
       emotionConfidence: cameraOn ? emotionConfidence : 0,
       ...snapshotPayload,
     });
-  }, [currentLevel, sendTelemetry, cameraOn, emotion, emotionConfidence, snapshot]);
+  }, [currentLevel, sendTelemetry, cameraOn, emotion, emotionConfidence, snapshot, levels.length]);
 
   // Track camera emotion changes for the after-game summary
   useEffect(() => {
     if (!cameraOn || !emotion) return;
-    const t = Math.round((Date.now() - startedAtRef.current) / 1000);
+    const t = Math.round(((startedAtRef.current ? Date.now() : Date.now()) - (startedAtRef.current || Date.now())) / 1000);
     const timeline = emotionTimelineRef.current;
     if (timeline.length === 0 || timeline[timeline.length - 1].emotion !== emotion) {
       timeline.push({ t, emotion });
@@ -101,8 +106,9 @@ export default function WordMatchGame() {
     }
   }, [emotion, cameraOn]);
 
-  const finishSession = (correctCount) => {
-    const durationSec = Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000));
+  const finishSession = useCallback((correctCount) => {
+    const startedAt = startedAtRef.current || Date.now();
+    const durationSec = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
     completeModule(MODULE_CODE);
     flushTelemetry({
       status: "idle",
@@ -125,7 +131,7 @@ export default function WordMatchGame() {
       wordsLearned: correctCount,
       emotionSummary: cameraOn ? summarizeEmotionTimeline(emotionTimelineRef.current) : null,
     });
-  };
+  }, [cameraOn, currentMood, emotion, emotionConfidence, flushTelemetry, recordSession, completeModule, levels.length]);
 
   const handleSelect = (option) => {
     if (option === level.correct) {

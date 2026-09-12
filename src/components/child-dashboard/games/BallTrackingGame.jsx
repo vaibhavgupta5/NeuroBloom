@@ -33,9 +33,13 @@ export default function BallTrackingGame() {
   const [gameState, setGameState] = useState('playing'); // playing, won, timeout
   const [showInfo, setShowInfo] = useState(false);
   const [tapHistory, setTapHistory] = useState([]);
-  const startedAtRef = useRef(Date.now());
+  const startedAtRef = useRef(0);
   const emotionTimelineRef = useRef([]); // {t, emotion} whenever the camera emotion changes
   const lastSnapshotSentRef = useRef(null);
+
+  useEffect(() => {
+    startedAtRef.current = Date.now();
+  }, []);
 
   const cameraOn = cameraStatus === 'granted';
 
@@ -69,8 +73,9 @@ export default function BallTrackingGame() {
   };
 
   // Record the session (win or timeout) to the server
-  const finishSession = (finalScore, outcome) => {
-    const durationSec = Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000));
+  const finishSession = useCallback((finalScore, outcome) => {
+    const startedAt = startedAtRef.current || Date.now();
+    const durationSec = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
     const { focusScore, avgResponseMs } = computeMetrics(finalScore, tapHistory);
 
     if (outcome === "won") completeModule(MODULE_CODE);
@@ -96,7 +101,7 @@ export default function BallTrackingGame() {
       moodBefore: currentMood,
       emotionSummary: cameraOn ? summarizeEmotionTimeline(emotionTimelineRef.current) : null,
     });
-  };
+  }, [cameraOn, currentMood, emotion, emotionConfidence, flushTelemetry, recordSession, targetScore, tapHistory, completeModule]);
 
   // Track camera emotion changes for the after-game summary
   useEffect(() => {
@@ -293,10 +298,10 @@ export default function BallTrackingGame() {
         >
           <div className="flex justify-center mb-4 text-[#FF7E6B]"><Timer size={80} /></div>
           <h2 className="font-nunito font-bold text-2xl md:text-4xl text-[#1B2D3E]">
-            Time's Up!
+            Time&apos;s Up!
           </h2>
           <p className="font-dm-sans text-[#8FA3B1] mt-2 md:text-xl mb-6">
-            You got {score} stars. Let's try again!
+            You got {score} stars. Let&apos;s try again!
           </p>
           <button
             onClick={handlePlayAgain}

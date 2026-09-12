@@ -70,7 +70,7 @@ export default function PlayScreen() {
   return (
     <div className="flex flex-col max-w-4xl mx-auto h-full px-4 md:px-8">
       <h1 className="font-nunito font-bold text-[24px] md:text-[32px] text-center pt-6 pb-6 md:pb-10 text-[#1B2D3E]">
-        Let's Play! <Gamepad2 size={32} className="inline-block text-[#3ECFB2] ml-2 pb-1" />
+        Let&apos;s Play! <Gamepad2 size={32} className="inline-block text-[#3ECFB2] ml-2 pb-1" />
       </h1>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 flex-1 content-start md:content-center pb-4">

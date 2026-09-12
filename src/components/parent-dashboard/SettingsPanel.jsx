@@ -32,7 +32,7 @@ export default function SettingsPanel() {
             <h3 className="font-nunito font-bold text-[#1B2D3E] text-lg mb-2 flex items-center gap-2">
               <span className="text-[#FFB020]"><Sun size={20} /></span> Screen Brightness
             </h3>
-            <p className="font-dm-sans text-sm text-[#8FA3B1] mb-4">Adjust the overall light emission of the child's screen.</p>
+            <p className="font-dm-sans text-sm text-[#8FA3B1] mb-4">Adjust the overall light emission of the child&apos;s screen.</p>
             <div className="flex items-center gap-4">
               <span className="text-[#8FA3B1] text-sm font-bold">50%</span>
               <input 

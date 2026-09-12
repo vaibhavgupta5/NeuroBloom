@@ -22,11 +22,11 @@ export default function CTABanner() {
 
           <div className="relative z-10 flex flex-col items-center">
             <motion.h2 variants={fadeUp} className="font-nunito font-bold text-3xl md:text-[42px] text-white mb-6 leading-tight max-w-2xl mx-auto">
-              Your Child's Growth Starts Today
+              Your Child&apos;s Growth Starts Today
             </motion.h2>
             
             <motion.p variants={fadeUp} className="font-dm-sans text-lg text-white/80 mb-10 max-w-xl mx-auto leading-relaxed">
-              Join 500+ families already using NeuroBloom to support their children's journey.
+              Join 500+ families already using NeuroBloom to support their children&apos;s journey.
             </motion.p>
             
             <Link href="/dashboard">

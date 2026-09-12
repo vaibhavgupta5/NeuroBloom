@@ -26,7 +26,7 @@ export default function SessionEmotionSummary() {
           </h3>
         </div>
         <p className="font-dm-sans text-sm text-[#8FA3B1]">
-          Play a game with the camera on to see emotion insights from {child.name}'s
+          Play a game with the camera on to see emotion insights from {child.name}&apos;s
           sessions here.
         </p>
       </div>

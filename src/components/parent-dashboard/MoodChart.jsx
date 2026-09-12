@@ -45,13 +45,14 @@ export default function MoodChart() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
     <div className="bg-white/55 backdrop-blur-lg border border-white/60 rounded-3xl p-6 shadow-[0_8px_32px_rgba(62,207,178,0.12),0_2px_8px_rgba(0,0,0,0.05)] h-full flex flex-col">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="font-nunito font-bold text-xl text-[#1B2D3E]">{child.name}'s Mood This Week</h2>
+        <h2 className="font-nunito font-bold text-xl text-[#1B2D3E]">{child.name}&apos;s Mood This Week</h2>
         <span className="bg-[#E8FAF6] text-[#1A9E8C] px-3 py-1 rounded-full text-xs font-bold border border-white">
           This Week
         </span>

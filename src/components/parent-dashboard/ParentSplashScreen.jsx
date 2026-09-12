@@ -19,8 +19,10 @@ export default function ParentSplashScreen({ onComplete }) {
     // Check if splash was already shown in this session
     const hasSeenSplash = sessionStorage.getItem("neurobloom_parent_splash_seen");
     if (hasSeenSplash) {
-      setShow(false);
-      if (onComplete) onComplete();
+      setTimeout(() => {
+        setShow(false);
+        if (onComplete) onComplete();
+      }, 0);
       return;
     }
 

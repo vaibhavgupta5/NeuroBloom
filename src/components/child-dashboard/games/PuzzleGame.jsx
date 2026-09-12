@@ -20,19 +20,24 @@ export default function PuzzleGame() {
 
   // Visual matching: Match the bright shape to its silhouette
   const levels = [
-    { target: <Star size={100} fill="currentColor" className="text-[#FFB020]" />, options: [<Star size={64} fill="currentColor" className="text-[#FFB020]" />, <Moon size={64} fill="currentColor" className="text-[#C4B5FD]" />, <Sun size={64} fill="currentColor" className="text-[#FF7E6B]" />], correct: 0 },
-    { target: <Flower size={100} className="text-[#4A90D9]" />, options: [<Bug size={64} className="text-[#FF7E6B]" />, <Flower size={64} className="text-[#4A90D9]" />, <Leaf size={64} className="text-[#3ECFB2]" />], correct: 1 },
-    { target: <Gift size={100} className="text-[#FFB020]" />, options: [<Gift size={64} className="text-[#FFB020]" />, <Heart size={64} className="text-[#FF7E6B]" />, <Music size={64} className="text-[#4A90D9]" />], correct: 0 }
+    { target: <Star size={100} fill="currentColor" className="text-[#FFB020]" />, options: [<Star key="s" size={64} fill="currentColor" className="text-[#FFB020]" />, <Moon key="m" size={64} fill="currentColor" className="text-[#C4B5FD]" />, <Sun key="u" size={64} fill="currentColor" className="text-[#FF7E6B]" />], correct: 0 },
+    { target: <Flower size={100} className="text-[#4A90D9]" />, options: [<Bug key="b" size={64} className="text-[#FF7E6B]" />, <Flower key="f" size={64} className="text-[#4A90D9]" />, <Leaf key="l" size={64} className="text-[#3ECFB2]" />], correct: 1 },
+    { target: <Gift size={100} className="text-[#FFB020]" />, options: [<Gift key="g" size={64} className="text-[#FFB020]" />, <Heart key="h" size={64} className="text-[#FF7E6B]" />, <Music key="m" size={64} className="text-[#4A90D9]" />], correct: 0 }
   ];
 
   const [currentLevel, setCurrentLevel] = useState(0);
   const [feedback, setFeedback] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
-  const startedAtRef = useRef(Date.now());
+  const startedAtRef = useRef(0);
   const mistakesRef = useRef(0);
   const consecutiveWrongRef = useRef(0); // auto-mode frustration signal
   const emotionTimelineRef = useRef([]);
   const lastSnapshotSentRef = useRef(null);
+
+  useEffect(() => {
+    startedAtRef.current = Date.now();
+  }, []);
+
   const [disabledOption, setDisabledOption] = useState(null); // gentle hint: one wrong option greyed
   const { status: cameraStatus, emotion, emotionConfidence, snapshot, requestCamera } = useCameraEmotion();
   const cameraOn = cameraStatus === 'granted';
@@ -78,7 +83,7 @@ export default function PuzzleGame() {
       gameTitle: "Puzzle Time",
       score: currentLevel,
       targetScore: levels.length,
-      elapsedSeconds: Math.round((Date.now() - startedAtRef.current) / 1000),
+      elapsedSeconds: Math.round(((startedAtRef.current ? Date.now() : Date.now()) - (startedAtRef.current || Date.now())) / 1000),
       focusScore,
       focusStatus: focusScore > 85 ? "Optimal Attention" : "Steady Focus",
       trackingSmoothness: mistakesRef.current === 0 ? "High Precision" : "Steady",
@@ -89,12 +94,12 @@ export default function PuzzleGame() {
       emotionConfidence: cameraOn ? emotionConfidence : 0,
       ...snapshotPayload,
     });
-  }, [currentLevel, sendTelemetry, cameraOn, emotion, emotionConfidence, snapshot]);
+  }, [currentLevel, sendTelemetry, cameraOn, emotion, emotionConfidence, snapshot, levels.length]);
 
   // Track camera emotion changes for the after-game summary
   useEffect(() => {
     if (!cameraOn || !emotion) return;
-    const t = Math.round((Date.now() - startedAtRef.current) / 1000);
+    const t = Math.round(((startedAtRef.current ? Date.now() : Date.now()) - (startedAtRef.current || Date.now())) / 1000);
     const timeline = emotionTimelineRef.current;
     if (timeline.length === 0 || timeline[timeline.length - 1].emotion !== emotion) {
       timeline.push({ t, emotion });
@@ -102,8 +107,9 @@ export default function PuzzleGame() {
     }
   }, [emotion, cameraOn]);
 
-  const finishSession = (correctCount) => {
-    const durationSec = Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000));
+  const finishSession = useCallback((correctCount) => {
+    const startedAt = startedAtRef.current || Date.now();
+    const durationSec = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
     completeModule(MODULE_CODE);
     flushTelemetry({
       status: "idle",
@@ -125,7 +131,7 @@ export default function PuzzleGame() {
       moodBefore: currentMood,
       emotionSummary: cameraOn ? summarizeEmotionTimeline(emotionTimelineRef.current) : null,
     });
-  };
+  }, [cameraOn, currentMood, emotion, emotionConfidence, flushTelemetry, recordSession, completeModule, levels.length]);
 
   const handleSelect = (idx) => {
     if (idx === level.correct) {

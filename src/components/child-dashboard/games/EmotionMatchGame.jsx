@@ -29,11 +29,16 @@ export default function EmotionMatchGame() {
   const [lastAnswerCorrect, setLastAnswerCorrect] = useState(null);
   const [selectedOpt, setSelectedOpt] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
-  const startedAtRef = useRef(Date.now());
+  const startedAtRef = useRef(0);
   const mistakesRef = useRef(0);
   const consecutiveWrongRef = useRef(0); // auto-mode frustration signal
   const emotionTimelineRef = useRef([]);
   const lastSnapshotSentRef = useRef(null);
+
+  useEffect(() => {
+    startedAtRef.current = Date.now();
+  }, []);
+
   const [disabledOption, setDisabledOption] = useState(null); // gentle hint: one wrong option greyed
   const currentMood = useChildStore((s) => s.currentMood);
   const { status: cameraStatus, emotion, emotionConfidence, snapshot, requestCamera } = useCameraEmotion();
@@ -45,6 +50,11 @@ export default function EmotionMatchGame() {
   }, [requestCamera]);
 
   const q = questions[currentQ];
+
+  const pickWrongOption = (correctIndex) => {
+    const wrong = [0, 1, 2].filter((i) => i !== correctIndex);
+    return wrong[Math.floor(Math.random() * wrong.length)];
+  };
 
   // Emotion-adaptive difficulty: frustration/anger/stress (camera) or
   // 2+ consecutive wrong answers (auto mode) greys out one wrong option.
@@ -60,11 +70,6 @@ export default function EmotionMatchGame() {
       setDisabledOption(null);
     }
   }, [emotion, cameraOn, currentQ, showResult, q]);
-
-  const pickWrongOption = (correctIndex) => {
-    const wrong = [0, 1, 2].filter((i) => i !== correctIndex);
-    return wrong[Math.floor(Math.random() * wrong.length)];
-  };
 
   // Live telemetry for the parent observer
   useEffect(() => {
@@ -84,7 +89,7 @@ export default function EmotionMatchGame() {
       gameTitle: "Feelings Game",
       score,
       targetScore: questions.length,
-      elapsedSeconds: Math.round((Date.now() - startedAtRef.current) / 1000),
+      elapsedSeconds: Math.round(((startedAtRef.current ? Date.now() : Date.now()) - (startedAtRef.current || Date.now())) / 1000),
       focusScore,
       focusStatus: focusScore > 85 ? "Optimal Attention" : "Steady Focus",
       trackingSmoothness: mistakesRef.current === 0 ? "High Precision" : "Steady",
@@ -100,7 +105,7 @@ export default function EmotionMatchGame() {
   // Track camera emotion changes for the after-game summary
   useEffect(() => {
     if (!cameraOn || !emotion) return;
-    const t = Math.round((Date.now() - startedAtRef.current) / 1000);
+    const t = Math.round(((startedAtRef.current ? Date.now() : Date.now()) - (startedAtRef.current || Date.now())) / 1000);
     const timeline = emotionTimelineRef.current;
     if (timeline.length === 0 || timeline[timeline.length - 1].emotion !== emotion) {
       timeline.push({ t, emotion });
@@ -108,8 +113,9 @@ export default function EmotionMatchGame() {
     }
   }, [emotion, cameraOn]);
 
-  const finishSession = (finalScore) => {
-    const durationSec = Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000));
+  const finishSession = useCallback((finalScore) => {
+    const startedAt = startedAtRef.current || Date.now();
+    const durationSec = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
     const accuracy = Math.round((finalScore / questions.length) * 100);
     completeModule(MODULE_CODE);
     flushTelemetry({
@@ -132,7 +138,7 @@ export default function EmotionMatchGame() {
       moodBefore: currentMood,
       emotionSummary: cameraOn ? summarizeEmotionTimeline(emotionTimelineRef.current) : null,
     });
-  };
+  }, [cameraOn, currentMood, emotion, emotionConfidence, flushTelemetry, recordSession, completeModule]);
 
   const handleAnswer = (index) => {
     if (selectedOpt !== null) return; // prevent double clicks
