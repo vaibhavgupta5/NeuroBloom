@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { useRealtimeSync } from "../../../hooks/useRealtimeSync";
+import { useParentActionSender } from "../../../hooks/useRealtimeSync";
+import { useParentStore } from "../../../stores/useParentStore";
 import { SvgIconBadge } from "../../ui/SvgIconBadge";
 import { Send, Pause, Play, Gauge, HeartHandshake } from "lucide-react";
 
 export default function ParentRemoteControls({ liveSession }) {
-  const { sendParentAction } = useRealtimeSync();
-  const [currentSpeed, setCurrentSpeed] = useState(liveSession.speedMultiplier || 1.0);
-  const [isPaused, setIsPaused] = useState(liveSession.isPaused || false);
+  const { sendParentAction } = useParentActionSender();
+  const child = useParentStore((s) => s.child);
+  const currentSpeed = liveSession.speedMultiplier || 1.0;
+  const isPaused = liveSession.isPaused || false;
 
   const stickers = [
     { id: "s1", label: "Super Focus", iconKey: "star", text: "Super Focus! ⭐" },
@@ -25,7 +26,6 @@ export default function ParentRemoteControls({ liveSession }) {
   };
 
   const handleSpeedChange = (newSpeed) => {
-    setCurrentSpeed(newSpeed);
     sendParentAction({
       actionType: "SET_SPEED",
       payload: { speed: newSpeed },
@@ -33,11 +33,9 @@ export default function ParentRemoteControls({ liveSession }) {
   };
 
   const handleTogglePause = () => {
-    const nextState = !isPaused;
-    setIsPaused(nextState);
     sendParentAction({
       actionType: "TOGGLE_PAUSE",
-      payload: { isPaused: nextState },
+      payload: { isPaused: !isPaused },
     });
   };
 
@@ -108,7 +106,7 @@ export default function ParentRemoteControls({ liveSession }) {
       >
         {isPaused ? (
           <>
-            <Play size={18} /> Resume Arjun's Gameplay
+            <Play size={18} /> Resume {child.name}'s Gameplay
           </>
         ) : (
           <>

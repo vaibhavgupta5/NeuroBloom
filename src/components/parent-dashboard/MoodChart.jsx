@@ -5,12 +5,11 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import { useState, useEffect } from "react";
 import { Smile, Frown, Meh } from "lucide-react";
 
-const getIconForEmoji = (emoji, props) => {
-  switch (emoji) {
-    case '😄': return <Smile {...props} className="text-[#FFB020]" />;
-    case '😊': return <Smile {...props} className="text-[#3ECFB2]" />;
-    case '😐': return <Meh {...props} className="text-[#4A90D9]" />;
-    case '😢': return <Frown {...props} className="text-[#FF7E6B]" />;
+const getIconForMood = (iconKey, props) => {
+  switch (iconKey) {
+    case 'happy': return <Smile {...props} className="text-[#3ECFB2]" />;
+    case 'neutral': return <Meh {...props} className="text-[#4A90D9]" />;
+    case 'sad': return <Frown {...props} className="text-[#FF7E6B]" />;
     default: return <Smile {...props} className="text-[#3ECFB2]" />;
   }
 };
@@ -22,7 +21,7 @@ const CustomTooltip = ({ active, payload, label }) => {
       <div className="bg-white/80 backdrop-blur-md border border-white/60 rounded-xl p-3 shadow-lg">
         <p className="font-dm-sans font-bold text-[#1B2D3E] text-sm mb-1">{label}</p>
         <div className="flex items-center gap-2">
-          {getIconForEmoji(data.emoji, { size: 20 })}
+          {getIconForMood(data.iconKey, { size: 20 })}
           <span className="font-sora font-bold text-[#3ECFB2]">{data.score}/5</span>
         </div>
       </div>
@@ -36,7 +35,7 @@ const CustomizedDot = (props) => {
 
   return (
     <foreignObject x={cx - 12} y={cy - 12} width={24} height={24}>
-      {getIconForEmoji(payload.emoji, { size: 24, strokeWidth: 2.5 })}
+      {getIconForMood(payload.iconKey, { size: 24, strokeWidth: 2.5 })}
     </foreignObject>
   );
 };

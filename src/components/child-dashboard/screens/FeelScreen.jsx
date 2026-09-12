@@ -87,6 +87,13 @@ export default function FeelScreen() {
     setMood(m.id);
     setJustSelected(true);
     setTimeout(() => setJustSelected(false), 3000);
+
+    // Persist the check-in so it appears on the parent dashboard
+    fetch("/api/mood", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ moodId: m.id }),
+    }).catch((err) => console.error("Failed to save mood:", err.message));
   };
 
   const activeMoodObj = moods.find(m => m.id === currentMood);

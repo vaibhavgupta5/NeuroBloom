@@ -77,8 +77,10 @@ export default function StatsRow() {
       value: stats.todayMinutes,
       suffix: " min",
       label: "Active Today",
-      subLabel: "↑ +3 min vs yesterday",
-      subLabelColor: "text-[#3ECFB2]"
+      subLabel: stats.todayMinutesDelta >= 0
+        ? `↑ +${stats.todayMinutesDelta} min vs yesterday`
+        : `↓ ${stats.todayMinutesDelta} min vs yesterday`,
+      subLabelColor: stats.todayMinutesDelta >= 0 ? "text-[#3ECFB2]" : "text-[#FF7E6B]"
     },
     {
       icon: <Flame size={28} />,
@@ -86,7 +88,7 @@ export default function StatsRow() {
       value: stats.weeklyStreak,
       suffix: " days",
       label: "Current Streak",
-      subLabel: "Personal best! 🎉",
+      subLabel: stats.weeklyStreak >= 7 ? "Personal best!" : "Keep it going!",
       subLabelColor: "text-[#FF7E6B]"
     },
     {
@@ -101,11 +103,11 @@ export default function StatsRow() {
     {
       icon: <Smile size={28} />,
       iconBg: "bg-[#C4B5FD]/30",
-      value: stats.avgMoodScore, // 4.2
+      value: stats.avgMoodScore,
       suffix: "/5",
       label: "Avg Mood Score",
-      subLabel: "↑ +0.3 vs last week",
-      subLabelColor: "text-[#3ECFB2]"
+      subLabel: "Past 7 days",
+      subLabelColor: "text-[#8FA3B1]"
     }
   ];
 
@@ -115,7 +117,7 @@ export default function StatsRow() {
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true }}
-      className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+      className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
     >
       {statCards.map((stat, index) => (
         <StatCard key={index} stat={stat} />

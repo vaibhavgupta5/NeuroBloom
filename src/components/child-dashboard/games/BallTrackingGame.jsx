@@ -3,15 +3,20 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChildStore } from "../../../stores/useChildStore";
-import { useRealtimeSync } from "../../../hooks/useRealtimeSync";
+import { useTelemetryEmitter } from "../../../hooks/useTelemetryEmitter";
+import { useSessionRecorder } from "../../../hooks/useRealtimeSync";
 import StickerOverlay from "../StickerOverlay";
 import { SvgIconBadge } from "../../ui/SvgIconBadge";
 import confetti from "canvas-confetti";
 import { Timer, Sparkles, Trophy, RefreshCw, Brain, Microscope } from "lucide-react";
 
+const MODULE_CODE = "ball-tracker";
+
 export default function BallTrackingGame() {
   const { setActiveGame, completeModule, remoteSpeedMultiplier, remotePaused } = useChildStore();
-  const { sendTelemetry } = useRealtimeSync();
+  const { sendTelemetry, flushTelemetry } = useTelemetryEmitter();
+  const { recordSession } = useSessionRecorder();
+  const currentMood = useChildStore((s) => s.currentMood);
 
   const [score, setScore] = useState(0);
   const targetScore = 5;
@@ -20,6 +25,7 @@ export default function BallTrackingGame() {
   const [gameState, setGameState] = useState('playing'); // playing, won, timeout
   const [showInfo, setShowInfo] = useState(false);
   const [tapHistory, setTapHistory] = useState([]);
+  const startedAtRef = useRef(Date.now());
 
   const moveBall = () => {
     setPosition({
@@ -28,17 +34,50 @@ export default function BallTrackingGame() {
     });
   };
 
-  // Emit realtime telemetry whenever position, score, state, or timer changes
-  useEffect(() => {
-    const focusScore = Math.min(100, Math.max(60, 80 + score * 4 - tapHistory.filter(t => !t.success).length * 5));
-    const avgResponseMs = tapHistory.length > 0 
-      ? Math.round(tapHistory.reduce((acc, t) => acc + (t.latencyMs || 300), 0) / tapHistory.length)
+  const computeMetrics = (finalScore, taps) => {
+    const focusScore = Math.min(100, Math.max(60, 80 + finalScore * 4 - taps.filter(t => !t.success).length * 5));
+    const avgResponseMs = taps.length > 0
+      ? Math.round(taps.reduce((acc, t) => acc + (t.latencyMs || 300), 0) / taps.length)
       : 320;
+    return { focusScore, avgResponseMs };
+  };
+
+  // Record the session (win or timeout) to the server
+  const finishSession = (finalScore, outcome) => {
+    const durationSec = Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000));
+    const { focusScore, avgResponseMs } = computeMetrics(finalScore, tapHistory);
+
+    if (outcome === "won") completeModule(MODULE_CODE);
+
+    flushTelemetry({
+      status: "idle",
+      activeGame: MODULE_CODE,
+      gameTitle: "Focus Ball Game",
+      score: finalScore,
+      targetScore,
+    });
+
+    recordSession({
+      moduleCode: MODULE_CODE,
+      score: finalScore,
+      maxScore: targetScore,
+      durationSec,
+      focusScore,
+      avgResponseMs,
+      outcome, // 'completed' | 'abandoned'
+      moodBefore: currentMood,
+    });
+  };
+
+  // Emit realtime telemetry whenever position, score, state, or timer changes (throttled by the hook)
+  useEffect(() => {
+    if (gameState !== 'playing') return;
+    const { focusScore, avgResponseMs } = computeMetrics(score, tapHistory);
 
     sendTelemetry({
-      activeGame: 'ball-tracker',
+      activeGame: MODULE_CODE,
       gameTitle: 'Focus Ball Game',
-      status: gameState,
+      status: remotePaused ? 'paused' : 'playing',
       score,
       targetScore,
       elapsedSeconds: 30 - timeLeft,
@@ -49,7 +88,6 @@ export default function BallTrackingGame() {
       frustrationLevel: tapHistory.filter(t => !t.success).length > 2 ? 'Moderate' : 'Low',
       liveCoordinates: position,
       speedMultiplier: remoteSpeedMultiplier,
-      isPaused: remotePaused,
     });
   }, [position, score, gameState, timeLeft, remoteSpeedMultiplier, remotePaused, sendTelemetry, tapHistory]);
 
@@ -78,6 +116,19 @@ export default function BallTrackingGame() {
     };
   }, [gameState, remoteSpeedMultiplier, remotePaused]);
 
+  // Persist the session when the game ends (win or timeout)
+  useEffect(() => {
+    if (gameState === 'won') {
+      finishSession(score, 'completed');
+      const t = setTimeout(() => setActiveGame(null), 2500);
+      return () => clearTimeout(t);
+    }
+    if (gameState === 'timeout') {
+      finishSession(score, 'abandoned');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState]);
+
   const handleTap = () => {
     if (gameState !== 'playing' || remotePaused) return;
 
@@ -90,13 +141,18 @@ export default function BallTrackingGame() {
 
     if (newScore >= targetScore) {
       setGameState('won');
-      setTimeout(() => {
-        completeModule('m4');
-        setActiveGame(null);
-      }, 2500);
     } else {
       moveBall();
     }
+  };
+
+  const handlePlayAgain = () => {
+    setScore(0);
+    setTimeLeft(30);
+    setGameState('playing');
+    setTapHistory([]);
+    startedAtRef.current = Date.now();
+    moveBall();
   };
 
   return (
@@ -176,7 +232,7 @@ export default function BallTrackingGame() {
       )}
 
       {gameState === 'timeout' && (
-        <motion.div 
+        <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           className="bg-white/90 backdrop-blur-md rounded-3xl p-8 md:p-12 text-center shadow-lg border-2 border-[#FF7E6B]/30 z-50 flex flex-col items-center"
@@ -188,13 +244,8 @@ export default function BallTrackingGame() {
           <p className="font-dm-sans text-[#8FA3B1] mt-2 md:text-xl mb-6">
             You got {score} stars. Let's try again!
           </p>
-          <button 
-            onClick={() => {
-              setScore(0);
-              setTimeLeft(30);
-              setGameState('playing');
-              moveBall();
-            }}
+          <button
+            onClick={handlePlayAgain}
             className="bg-[#3ECFB2] text-white px-8 py-3 rounded-xl font-nunito font-bold text-xl shadow-[0_4px_0_#1A9E8C] active:translate-y-1 active:shadow-none transition-all"
           >
             <span className="flex items-center justify-center gap-2">Play Again <RefreshCw size={20} /></span>

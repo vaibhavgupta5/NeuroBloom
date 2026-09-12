@@ -8,11 +8,11 @@ import { Star, Lock, Palette, Type, Puzzle, Crosshair, Gamepad2, Flame } from "l
 export default function HomeScreen() {
   const { child, todayModules, setScreen, setActiveGame } = useChildStore();
 
-  const moduleIconMap = {
-    '🎭': <Palette size={48} className="text-[#4A90D9]" />,
-    '🔤': <Type size={48} className="text-[#FF7E6B]" />,
-    '🧩': <Puzzle size={48} className="text-[#C4B5FD]" />,
-    '🎯': <Crosshair size={48} className="text-[#3ECFB2]" />,
+  const iconKeyMap = {
+    emotion: <Palette size={48} className="text-[#4A90D9]" />,
+    word: <Type size={48} className="text-[#FF7E6B]" />,
+    puzzle: <Puzzle size={48} className="text-[#C4B5FD]" />,
+    focus: <Crosshair size={48} className="text-[#3ECFB2]" />,
   };
 
   const allComplete = todayModules.every(m => m.completed);
@@ -20,10 +20,7 @@ export default function HomeScreen() {
 
   const handleStart = (mod) => {
     setScreen('play');
-    if (mod.id === 'm1') setActiveGame('emotion-match');
-    if (mod.id === 'm2') setActiveGame('word-match');
-    if (mod.id === 'm3') setActiveGame('puzzle');
-    if (mod.id === 'm4') setActiveGame('ball-tracker');
+    setActiveGame(mod.activeGameKey);
   };
 
   return (
@@ -91,7 +88,7 @@ export default function HomeScreen() {
               <div className={`w-[56px] h-[56px] md:w-[90px] md:h-[90px] rounded-2xl flex items-center justify-center text-2xl md:text-5xl shadow-sm shrink-0 ${
                 mod.completed ? "bg-[#3ECFB2]/20" : (!mod.unlocked ? "bg-gray-100" : "bg-white border-2 border-[#3ECFB2]/30")
               }`}>
-                {moduleIconMap[mod.emoji] || <Gamepad2 size={48} className="text-[#1B2D3E]" />}
+                {iconKeyMap[mod.iconKey] || <Gamepad2 size={48} className="text-[#1B2D3E]" />}
               </div>
               <div className="min-h-0">
                 <h2 className="font-nunito font-bold text-[14px] md:text-[22px] text-[#1B2D3E] md:mb-2 leading-tight line-clamp-2">{mod.title}</h2>

@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChildStore } from "../../../stores/useChildStore";
+import { useTelemetryEmitter } from "../../../hooks/useTelemetryEmitter";
+import { useSessionRecorder } from "../../../hooks/useRealtimeSync";
 import { Smile, Frown, Meh, Star, Gamepad2, Heart, Brain, PartyPopper, Microscope } from "lucide-react";
+
+const MODULE_CODE = "emotion-match";
 
 const questions = [
   { face: <Smile size={120} className="text-[#FFB020]" />, prompt: 'How is this person feeling?', options: ['Happy', 'Sad', 'Angry'],   correct: 0 },
@@ -15,21 +19,69 @@ const questions = [
 
 export default function EmotionMatchGame() {
   const { setActiveGame, completeModule } = useChildStore();
+  const { sendTelemetry, flushTelemetry } = useTelemetryEmitter();
+  const { recordSession } = useSessionRecorder();
   const [currentQ, setCurrentQ] = useState(0);
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [lastAnswerCorrect, setLastAnswerCorrect] = useState(null);
   const [selectedOpt, setSelectedOpt] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
+  const startedAtRef = useRef(Date.now());
+  const mistakesRef = useRef(0);
+  const currentMood = useChildStore((s) => s.currentMood);
 
   const q = questions[currentQ];
+
+  // Live telemetry for the parent observer
+  useEffect(() => {
+    if (showResult) return;
+    const focusScore = Math.min(100, Math.max(55, 90 - mistakesRef.current * 8 + score * 2));
+    sendTelemetry({
+      status: "playing",
+      activeGame: MODULE_CODE,
+      gameTitle: "Feelings Game",
+      score,
+      targetScore: questions.length,
+      elapsedSeconds: Math.round((Date.now() - startedAtRef.current) / 1000),
+      focusScore,
+      focusStatus: focusScore > 85 ? "Optimal Attention" : "Steady Focus",
+      trackingSmoothness: mistakesRef.current === 0 ? "High Precision" : "Steady",
+      avgResponseMs: 0,
+      frustrationLevel: mistakesRef.current > 2 ? "Moderate" : "Low",
+      liveCoordinates: { x: 50, y: 50 },
+    });
+  }, [currentQ, score, showResult, sendTelemetry]);
+
+  const finishSession = (finalScore) => {
+    const durationSec = Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000));
+    const accuracy = Math.round((finalScore / questions.length) * 100);
+    completeModule(MODULE_CODE);
+    flushTelemetry({
+      status: "idle",
+      activeGame: MODULE_CODE,
+      gameTitle: "Feelings Game",
+      score: finalScore,
+      targetScore: questions.length,
+    });
+    recordSession({
+      moduleCode: MODULE_CODE,
+      score: finalScore,
+      maxScore: questions.length,
+      durationSec,
+      focusScore: Math.min(100, Math.max(55, 90 - mistakesRef.current * 8 + finalScore * 2)),
+      avgResponseMs: 0,
+      outcome: "completed",
+      moodBefore: currentMood,
+    });
+  };
 
   const handleAnswer = (index) => {
     if (selectedOpt !== null) return; // prevent double clicks
 
     setSelectedOpt(index);
     const isCorrect = index === q.correct;
-    
+
     if (isCorrect) {
       setLastAnswerCorrect(true);
       setScore(s => s + 1);
@@ -40,10 +92,11 @@ export default function EmotionMatchGame() {
           setSelectedOpt(null);
         } else {
           setShowResult(true);
-          completeModule('m1'); // complete feelings game module
+          finishSession(score + 1);
         }
       }, 1500);
     } else {
+      mistakesRef.current += 1;
       setLastAnswerCorrect(false);
       setTimeout(() => {
         setLastAnswerCorrect(null);
@@ -58,6 +111,8 @@ export default function EmotionMatchGame() {
     setShowResult(false);
     setLastAnswerCorrect(null);
     setSelectedOpt(null);
+    startedAtRef.current = Date.now();
+    mistakesRef.current = 0;
   };
 
   if (showResult) {

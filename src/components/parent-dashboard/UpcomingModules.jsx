@@ -9,9 +9,10 @@ export default function UpcomingModules() {
   const { upcomingModules } = useParentStore();
 
   const moduleIconMap = {
-    '🎭': <Palette size={32} className="text-[#4A90D9]" />,
-    '🔤': <Type size={32} className="text-[#FF7E6B]" />,
-    '🧩': <Puzzle size={32} className="text-[#C4B5FD]" />,
+    emotion: <Palette size={32} className="text-[#4A90D9]" />,
+    word: <Type size={32} className="text-[#FF7E6B]" />,
+    puzzle: <Puzzle size={32} className="text-[#C4B5FD]" />,
+    focus: <Star size={32} className="text-[#3ECFB2]" />,
   };
 
   const getBorderColor = (skill) => {
@@ -46,7 +47,7 @@ export default function UpcomingModules() {
               whileHover={clayHover}
               className={`bg-white/80 backdrop-blur-md border border-white/60 rounded-2xl p-4 shadow-sm min-w-[240px] flex-1 flex flex-col border-l-4 ${getBorderColor(mod.skill)} cursor-pointer`}
             >
-              <div className="mb-2">{moduleIconMap[mod.emoji] || <Gamepad2 size={32} />}</div>
+              <div className="mb-2">{moduleIconMap[mod.iconKey] || <Gamepad2 size={32} />}</div>
               <h3 className="font-nunito font-bold text-[#1B2D3E] text-sm mb-2 leading-tight">
                 {mod.title}
               </h3>

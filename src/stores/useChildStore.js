@@ -1,19 +1,25 @@
 import { create } from 'zustand'
 
+const initialChild = {
+  id: null,
+  name: 'Arjun',
+  age: 6,
+  avatarIcon: 'child',
+  streak: 0,
+  stars: 0,
+  dailyGoal: 4,
+}
+
 export const useChildStore = create((set, get) => ({
-  child: { name: 'Arjun', avatarIcon: 'child', streak: 7, stars: 34 },
-  todayModules: [
-    { id: 'm1', iconKey: 'emotion', emoji: '🎭', title: 'Feelings Game',       shortTitle: 'Feelings', duration: '8 min',  skill: 'Social',        unlocked: true,  completed: false },
-    { id: 'm2', iconKey: 'word',    emoji: '🔤', title: 'Word Match',           shortTitle: 'Words',    duration: '6 min',  skill: 'Communication', unlocked: false, completed: false },
-    { id: 'm3', iconKey: 'puzzle',  emoji: '🧩', title: 'Puzzle Time',          shortTitle: 'Puzzles',  duration: '7 min',  skill: 'Cognitive',     unlocked: false, completed: false },
-    { id: 'm4', iconKey: 'focus',   emoji: '🎯', title: 'Focus Ball',           shortTitle: 'Focus',    duration: '5 min',  skill: 'Attention',     unlocked: false, completed: false },
-  ],
-  completedModuleIds: [],
+  child: initialChild,
+  todayModules: [],
+  todayCompletedCount: 0,
+  hydrated: false,
   currentMood: null,
   activeScreen: 'home',
   activeGame: null,
-  
-  // Realtime parent intervention state
+
+  // Realtime parent intervention state (applied locally via SSE parent-action events)
   activeSticker: null,
   remoteSpeedMultiplier: 1.0,
   remotePaused: false,
@@ -26,28 +32,44 @@ export const useChildStore = create((set, get) => ({
     customBackgroundImage: null, // URL or ObjectURL
   },
 
-  setDisplaySettings: (settings) => set((state) => ({ 
-    displaySettings: { ...state.displaySettings, ...settings } 
+  setDisplaySettings: (settings) => set((state) => ({
+    displaySettings: { ...state.displaySettings, ...settings }
   })),
   setMood: (mood) => set({ currentMood: mood }),
-  
-  completeModule: (id) =>
+
+  // Hydrate from GET /api/child/state (or the response of POST /api/sessions)
+  hydrateChildState: (data) => set({
+    child: data.child || get().child,
+    todayModules: data.todayModules ?? get().todayModules,
+    todayCompletedCount: data.todayCompletedCount ?? get().todayCompletedCount,
+    currentMood: data.currentMood !== undefined ? data.currentMood : get().currentMood,
+    hydrated: true,
+  }),
+
+  // Optimistically mark a module complete; the caller persists via POST /api/sessions
+  // and reconciles with hydrateChildState().
+  completeModule: (moduleCode) =>
     set((state) => {
-      const newCompleted = [...state.completedModuleIds, id]
-      const updated = state.todayModules.map((m, i) => {
-        if (m.id === id) return { ...m, completed: true }
+      const updated = state.todayModules.map((m) => {
+        if (m.moduleCode === moduleCode || m.id === moduleCode) return { ...m, completed: true }
         // unlock next module
-        const idx = state.todayModules.findIndex((x) => x.id === id)
-        if (i === idx + 1) return { ...m, unlocked: true }
+        const idx = state.todayModules.findIndex(
+          (x) => x.moduleCode === moduleCode || x.id === moduleCode
+        )
+        if (state.todayModules.indexOf(m) === idx + 1) return { ...m, unlocked: true }
         return m
       })
-      return { completedModuleIds: newCompleted, todayModules: updated, activeGame: null }
+      return {
+        todayModules: updated,
+        todayCompletedCount: state.todayCompletedCount + 1,
+        activeGame: null,
+      }
     }),
 
   setScreen: (screen) => set({ activeScreen: screen }),
   setActiveGame: (game) => set({ activeGame: game }),
 
-  // Parent remote intervention action handler
+  // Parent remote intervention action handler (fed by the SSE parent-action stream)
   receiveParentAction: (actionPayload) => {
     if (!actionPayload) return;
     const { actionType, payload } = actionPayload;

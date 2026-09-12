@@ -2,7 +2,7 @@
 
 import { useChildStore } from "../../stores/useChildStore";
 import Link from "next/link";
-import { Users, Flame, Leaf } from "lucide-react";
+import { Users, Flame, Leaf, Baby } from "lucide-react";
 
 export default function TopStrip() {
   const { child } = useChildStore();
@@ -28,8 +28,8 @@ export default function TopStrip() {
         
         {/* Child Profile */}
         <div className="flex items-center gap-2 bg-white/80 border border-white/60 pl-1.5 pr-3 py-1 rounded-2xl shadow-sm">
-          <div className="bg-[#E8FAF6] rounded-xl w-8 h-8 flex items-center justify-center text-sm shadow-inner border border-white/80">
-            {child.avatarEmoji}
+          <div className="bg-[#E8FAF6] rounded-xl w-8 h-8 flex items-center justify-center text-sm shadow-inner border border-white/80 text-[#1A9E8C]">
+            <Baby size={16} />
           </div>
           <div className="font-nunito font-bold text-[#1B2D3E] text-sm hidden sm:block">
             {child.name}

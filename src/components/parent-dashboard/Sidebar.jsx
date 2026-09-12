@@ -79,7 +79,7 @@ export default function Sidebar() {
             {parent.avatarInitials}
           </div>
           <div>
-            <div className="font-nunito font-bold text-[#1B2D3E] text-sm">{parent.name} M.</div>
+            <div className="font-nunito font-bold text-[#1B2D3E] text-sm">{parent.name}</div>
             <div className="font-dm-sans text-[#8FA3B1] text-xs hover:text-[#FF7E6B] transition-colors">Log out</div>
           </div>
         </div>

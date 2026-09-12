@@ -39,37 +39,54 @@ export default function LiveScreenReplica({ liveSession }) {
           <SvgIconBadge type="star" size={14} variant="amber" />
         </div>
 
-        {/* Target Mirror Indicator */}
-        <motion.div
-          animate={{
-            left: `${liveCoordinates.x || 50}%`,
-            top: `${liveCoordinates.y || 50}%`,
-          }}
-          transition={{
-            type: "tween",
-            ease: "easeInOut",
-            duration: 0.8,
-          }}
-          className="absolute w-14 h-14 -ml-7 -mt-7 rounded-full bg-[#FDE047] shadow-[0_0_30px_rgba(253,224,71,0.9)] border-2 border-white flex items-center justify-center text-white pointer-events-none z-10"
-        >
-          <Sparkles size={24} className="text-white" />
-        </motion.div>
+        {/* Target Mirror Indicator — only when a session is live */}
+        {isLive !== false && (
+          <>
+            <motion.div
+              animate={{
+                left: `${liveCoordinates.x || 50}%`,
+                top: `${liveCoordinates.y || 50}%`,
+              }}
+              transition={{
+                type: "tween",
+                ease: "easeInOut",
+                duration: 0.8,
+              }}
+              className="absolute w-14 h-14 -ml-7 -mt-7 rounded-full bg-[#FDE047] shadow-[0_0_30px_rgba(253,224,71,0.9)] border-2 border-white flex items-center justify-center text-white pointer-events-none z-10"
+            >
+              <Sparkles size={24} className="text-white" />
+            </motion.div>
 
-        {/* Simulated Child Touch Ripple */}
-        <motion.div
-          animate={{
-            left: `${liveCoordinates.x || 50}%`,
-            top: `${liveCoordinates.y || 50}%`,
-            scale: [0.5, 1.8, 0],
-            opacity: [0.8, 0.4, 0],
-          }}
-          transition={{
-            duration: 1.5,
-            repeat: Infinity,
-            repeatDelay: 0.5,
-          }}
-          className="absolute w-12 h-12 -ml-6 -mt-6 rounded-full border-2 border-[#3ECFB2] bg-[#3ECFB2]/20 pointer-events-none z-0"
-        />
+            {/* Simulated Child Touch Ripple */}
+            <motion.div
+              animate={{
+                left: `${liveCoordinates.x || 50}%`,
+                top: `${liveCoordinates.y || 50}%`,
+                scale: [0.5, 1.8, 0],
+                opacity: [0.8, 0.4, 0],
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                repeatDelay: 0.5,
+              }}
+              className="absolute w-12 h-12 -ml-6 -mt-6 rounded-full border-2 border-[#3ECFB2] bg-[#3ECFB2]/20 pointer-events-none z-0"
+            />
+          </>
+        )}
+
+        {/* Idle overlay */}
+        {isLive === false && (
+          <div className="absolute inset-0 z-20 bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center text-center px-6">
+            <Eye size={28} className="text-[#3ECFB2]/60 mb-2" />
+            <p className="font-nunito font-bold text-white/90 text-sm">
+              Waiting for a live session…
+            </p>
+            <p className="font-dm-sans text-white/50 text-xs mt-1">
+              The mirror activates when the child starts a game
+            </p>
+          </div>
+        )}
 
         {/* Footer Status */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md text-white/90 px-4 py-1 rounded-full text-xs font-dm-sans">

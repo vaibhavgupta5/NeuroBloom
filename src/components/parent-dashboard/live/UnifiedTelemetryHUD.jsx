@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import LiveScreenReplica from "./LiveScreenReplica";
 import ParentRemoteControls from "./ParentRemoteControls";
 import InteractiveMetricModal from "./InteractiveMetricModal";
@@ -10,25 +10,29 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import { Activity, Info, Zap, ShieldCheck, Clock } from "lucide-react";
 
 export default function UnifiedTelemetryHUD() {
-  const { liveSession } = useParentStore();
+  const { liveSession, child } = useParentStore();
   const [selectedMetric, setSelectedMetric] = useState(null);
 
-  // Sparkline data for live focus trend graph
-  const liveFocusTrend = [
-    { time: "00:05", focus: 75 },
-    { time: "00:10", focus: 82 },
-    { time: "00:15", focus: 80 },
-    { time: "00:20", focus: 88 },
-    { time: "00:25", focus: 92 },
-    { time: "00:30", focus: liveSession.focusScore || 88 },
-  ];
+  // Sparkline data for live focus trend graph (grows as the session streams)
+  const [focusHistory, setFocusHistory] = useState([]);
+
+  useEffect(() => {
+    setFocusHistory((prev) => {
+      const next = [...prev, { time: `:${String(prev.length * 5).padStart(2, "0")}`, focus: liveSession.focusScore || 0 }];
+      return next.slice(-8);
+    });
+  }, [liveSession.focusScore]);
+
+  const liveFocusTrend = focusHistory.length > 0
+    ? focusHistory
+    : [{ time: ":00", focus: liveSession.focusScore || 0 }];
 
   const metrics = [
     {
       id: "focusScore",
       label: "Attention Hold Index",
-      value: `${liveSession.focusScore || 88}%`,
-      status: liveSession.focusStatus || "Optimal Attention",
+      value: liveSession.isLive ? `${liveSession.focusScore || 0}%` : "—",
+      status: liveSession.isLive ? liveSession.focusStatus || "Reading…" : "Waiting for a session",
       iconType: "focus",
       variant: "teal",
       tag: "Peak Focus",
@@ -36,8 +40,8 @@ export default function UnifiedTelemetryHUD() {
     {
       id: "avgResponseMs",
       label: "Tracking Pace & Speed",
-      value: `${liveSession.avgResponseMs || 310} ms`,
-      status: "Steady Motor Rhythm",
+      value: liveSession.isLive && liveSession.avgResponseMs ? `${liveSession.avgResponseMs} ms` : "—",
+      status: liveSession.isLive ? "Steady Motor Rhythm" : "Waiting for a session",
       iconType: "zap",
       variant: "amber",
       tag: "Optimal Pace",
@@ -45,8 +49,8 @@ export default function UnifiedTelemetryHUD() {
     {
       id: "frustrationLevel",
       label: "Patience & Calm Meter",
-      value: liveSession.frustrationLevel || "Low Risk",
-      status: "0 Frustration Triggers",
+      value: liveSession.isLive ? liveSession.frustrationLevel || "Low Risk" : "—",
+      status: liveSession.isLive ? "Safe Emotional Range" : "Waiting for a session",
       iconType: "alert",
       variant: "blue",
       tag: "Safe Zone",
@@ -55,29 +59,49 @@ export default function UnifiedTelemetryHUD() {
 
   return (
     <div className="space-y-4 md:space-y-6">
+      {/* Idle state — no live session */}
+      {!liveSession.isLive && (
+        <div className="bg-white/55 backdrop-blur-lg border border-white/60 rounded-3xl p-8 md:p-12 shadow-[0_8px_32px_rgba(62,207,178,0.12)] flex flex-col items-center text-center">
+          <div className="w-16 h-16 rounded-3xl bg-[#E8FAF6] border-2 border-[#3ECFB2]/30 flex items-center justify-center text-[#1A9E8C] mb-4">
+            <Activity size={30} />
+          </div>
+          <h2 className="font-nunito font-extrabold text-xl md:text-2xl text-[#1B2D3E] mb-2">
+            No live session right now
+          </h2>
+          <p className="font-dm-sans text-sm md:text-base text-[#8FA3B1] max-w-md">
+            When {child.name} starts a game on their device, live telemetry will appear
+            here automatically — screen mirror, focus metrics, and remote controls.
+          </p>
+        </div>
+      )}
+
       {/* Top Banner Status Bar */}
-      <div className="bg-gradient-to-r from-[#1B2D3E] to-[#253A50] rounded-3xl p-4 md:p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-3 border-2 border-white/20">
+      <div className={`bg-gradient-to-r from-[#1B2D3E] to-[#253A50] rounded-3xl p-4 md:p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-3 border-2 border-white/20 ${liveSession.isLive ? "" : "opacity-50"}`}>
         <div className="flex items-center gap-3">
           <div className="relative shrink-0">
             <SvgIconBadge type="focus" size={28} variant="ghost" />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-[#3ECFB2] rounded-full animate-ping border-2 border-[#1B2D3E]" />
+            {liveSession.isLive && (
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-[#3ECFB2] rounded-full animate-ping border-2 border-[#1B2D3E]" />
+            )}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-dm-sans text-[11px] md:text-xs font-bold text-[#3ECFB2] uppercase tracking-wider">
-                🟢 Live Co-Regulation HUD Active
+              <span className={`font-dm-sans text-[11px] md:text-xs font-bold uppercase tracking-wider ${liveSession.isLive ? "text-[#3ECFB2]" : "text-[#8FA3B1]"}`}>
+                {liveSession.isLive ? "Live Co-Regulation HUD Active" : "Standby — Waiting for Session"}
               </span>
             </div>
             <h2 className="font-nunito font-bold text-lg md:text-2xl text-white leading-snug">
-              Arjun is playing {liveSession.gameTitle || "Focus Ball Game"}
+              {liveSession.isLive
+                ? `${child.name} is playing ${liveSession.gameTitle || "Focus Ball Game"}`
+                : `${child.name} is not playing right now`}
             </h2>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-white/20 self-start sm:self-auto">
+        <div className={`flex items-center gap-2 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-white/20 self-start sm:self-auto ${liveSession.isLive ? "bg-white/10" : "bg-white/5"}`}>
           <Clock size={16} className="text-[#3ECFB2]" />
           <div className="font-dm-sans text-xs md:text-sm font-bold">
-            Elapsed: <span className="text-[#3ECFB2]">{liveSession.elapsedSeconds || 24}s</span>
+            Elapsed: <span className="text-[#3ECFB2]">{liveSession.elapsedSeconds || 0}s</span>
           </div>
         </div>
       </div>

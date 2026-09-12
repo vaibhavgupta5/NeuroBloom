@@ -19,11 +19,11 @@ export default function LiveObserverBanner() {
             Live Session Active — {liveSession.childName || "Arjun"} is playing {liveSession.gameTitle || "Focus Ball"}
           </div>
           <div className="font-dm-sans text-xs text-[#56728A] flex flex-wrap items-center gap-2 mt-1">
-            <span>Focus: <strong className="text-[#1A9E8C]">{liveSession.focusScore || 88}%</strong></span>
+            <span>Focus: <strong className="text-[#1A9E8C]">{liveSession.focusScore || 0}%</strong></span>
             <span>·</span>
             <span>Speed: <strong className="text-[#1A9E8C]">{liveSession.speedMultiplier || 1.0}x</strong></span>
             <span>·</span>
-            <span>Elapsed: <strong className="text-[#1A9E8C]">{liveSession.elapsedSeconds || 24}s</strong></span>
+            <span>Elapsed: <strong className="text-[#1A9E8C]">{liveSession.elapsedSeconds || 0}s</strong></span>
           </div>
         </div>
       </div>

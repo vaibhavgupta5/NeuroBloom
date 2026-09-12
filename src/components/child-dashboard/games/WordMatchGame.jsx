@@ -1,14 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChildStore } from "../../../stores/useChildStore";
+import { useTelemetryEmitter } from "../../../hooks/useTelemetryEmitter";
+import { useSessionRecorder } from "../../../hooks/useRealtimeSync";
 import confetti from "canvas-confetti";
 import { Apple, Cat, Car, HelpCircle, Heart, Star, Brain, Microscope } from "lucide-react";
 
+const MODULE_CODE = "word-match";
+
 export default function WordMatchGame() {
   const { setActiveGame, completeModule } = useChildStore();
-  
+  const { sendTelemetry, flushTelemetry } = useTelemetryEmitter();
+  const { recordSession } = useSessionRecorder();
+  const currentMood = useChildStore((s) => s.currentMood);
+
   const levels = [
     { icon: <Apple size={100} className="text-[#FF7E6B]" />, options: ["Apple", "Banana", "Dog"], correct: "Apple" },
     { icon: <Cat size={100} className="text-[#FFB020]" />, options: ["Bird", "Cat", "Cow"], correct: "Cat" },
@@ -18,8 +25,52 @@ export default function WordMatchGame() {
   const [currentLevel, setCurrentLevel] = useState(0);
   const [feedback, setFeedback] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
-  
+  const startedAtRef = useRef(Date.now());
+  const mistakesRef = useRef(0);
+
   const level = levels[currentLevel];
+
+  // Live telemetry for the parent observer
+  useEffect(() => {
+    const focusScore = Math.min(100, Math.max(55, 90 - mistakesRef.current * 10 + currentLevel * 3));
+    sendTelemetry({
+      status: "playing",
+      activeGame: MODULE_CODE,
+      gameTitle: "Word Match",
+      score: currentLevel,
+      targetScore: levels.length,
+      elapsedSeconds: Math.round((Date.now() - startedAtRef.current) / 1000),
+      focusScore,
+      focusStatus: focusScore > 85 ? "Optimal Attention" : "Steady Focus",
+      trackingSmoothness: mistakesRef.current === 0 ? "High Precision" : "Steady",
+      avgResponseMs: 0,
+      frustrationLevel: mistakesRef.current > 2 ? "Moderate" : "Low",
+      liveCoordinates: { x: 50, y: 50 },
+    });
+  }, [currentLevel, sendTelemetry]);
+
+  const finishSession = (correctCount) => {
+    const durationSec = Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000));
+    completeModule(MODULE_CODE);
+    flushTelemetry({
+      status: "idle",
+      activeGame: MODULE_CODE,
+      gameTitle: "Word Match",
+      score: correctCount,
+      targetScore: levels.length,
+    });
+    recordSession({
+      moduleCode: MODULE_CODE,
+      score: correctCount,
+      maxScore: levels.length,
+      durationSec,
+      focusScore: Math.min(100, Math.max(55, 90 - mistakesRef.current * 10 + correctCount * 3)),
+      avgResponseMs: 0,
+      outcome: "completed",
+      moodBefore: currentMood,
+      wordsLearned: correctCount,
+    });
+  };
 
   const handleSelect = (option) => {
     if (option === level.correct) {
@@ -27,7 +78,7 @@ export default function WordMatchGame() {
       if (currentLevel === levels.length - 1) {
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
         setTimeout(() => {
-          completeModule('m2'); // Complete word match module
+          finishSession(levels.length - mistakesRef.current > 0 ? Math.max(1, levels.length - mistakesRef.current) : 1);
           setActiveGame(null);
         }, 2000);
       } else {
@@ -37,6 +88,7 @@ export default function WordMatchGame() {
         }, 1200);
       }
     } else {
+      mistakesRef.current += 1;
       setFeedback("wrong");
       setTimeout(() => setFeedback(null), 1000);
     }

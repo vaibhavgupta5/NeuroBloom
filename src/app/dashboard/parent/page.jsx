@@ -20,12 +20,19 @@ import SleepMoodChart from "../../../components/parent-dashboard/SleepMoodChart"
 import ClinicalReports from "../../../components/parent-dashboard/ClinicalReports";
 import LiveObserverBanner from "../../../components/parent-dashboard/live/LiveObserverBanner";
 import UnifiedTelemetryHUD from "../../../components/parent-dashboard/live/UnifiedTelemetryHUD";
+import DailyGoalRing from "../../../components/parent-dashboard/DailyGoalRing";
 import { useParentStore } from "../../../stores/useParentStore";
+import { useDashboardData } from "../../../hooks/useDashboardData";
+import { useLiveSession } from "../../../hooks/useLiveSession";
 
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function ParentDashboardPage() {
   const { activeTab, liveSession } = useParentStore();
+
+  // Server data + SSE live telemetry
+  useDashboardData();
+  useLiveSession();
 
   const renderContent = () => {
     switch (activeTab) {
@@ -33,48 +40,75 @@ export default function ParentDashboardPage() {
         return <UnifiedTelemetryHUD />;
       case "overview":
         return (
-          <>
+          <div className="space-y-6 md:space-y-8 pb-12">
             {liveSession?.isLive && <LiveObserverBanner />}
+            <DailyGoalRing />
             <StatsRow />
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
+            
+            {/* Timeline + Therapist Notes */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+              <div className="lg:col-span-2 flex flex-col h-full">
                 <ActivityTimeline />
               </div>
-              <div>
+              <div className="lg:col-span-1 flex flex-col h-full">
                 <TherapistNotes />
               </div>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <MoodChart />
-              <ConcentrationChart />
+            {/* Mood + Concentration */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              <div className="flex flex-col h-full">
+                <MoodChart />
+              </div>
+              <div className="flex flex-col h-full">
+                <ConcentrationChart />
+              </div>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-              <CategoryTimeChart />
-              <SkillBars />
+            {/* Category Time + Skill Development */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              <div className="flex flex-col h-full">
+                <CategoryTimeChart />
+              </div>
+              <div className="flex flex-col h-full">
+                <SkillBars />
+              </div>
             </div>
             
-            <div className="mt-6">
+            {/* Independence Growth */}
+            <div>
               <PromptDependency />
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12">
-              <UpcomingModules />
-              <Achievements />
+            {/* Recommended Modules + Achievements */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              <div className="flex flex-col h-full">
+                <UpcomingModules />
+              </div>
+              <div className="flex flex-col h-full">
+                <Achievements />
+              </div>
             </div>
-          </>
+          </div>
         );
       case "progress":
         return (
-          <div className="space-y-6 pb-12">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <VocabularyGrowthChart />
-              <CompletionRateChart />
+          <div className="space-y-6 md:space-y-8 pb-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              <div className="flex flex-col h-full">
+                <VocabularyGrowthChart />
+              </div>
+              <div className="flex flex-col h-full">
+                <CompletionRateChart />
+              </div>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <ConcentrationChart />
-              <CategoryTimeChart />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              <div className="flex flex-col h-full">
+                <ConcentrationChart />
+              </div>
+              <div className="flex flex-col h-full">
+                <CategoryTimeChart />
+              </div>
             </div>
             <SkillBars />
             <PromptDependency />
@@ -83,21 +117,29 @@ export default function ParentDashboardPage() {
         );
       case "mood":
         return (
-          <div className="space-y-6 pb-12">
+          <div className="space-y-6 md:space-y-8 pb-12">
             <MoodChart />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <SleepMoodChart />
-              <BehavioralLogChart />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              <div className="flex flex-col h-full">
+                <SleepMoodChart />
+              </div>
+              <div className="flex flex-col h-full">
+                <BehavioralLogChart />
+              </div>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <ConcentrationChart />
-              <CategoryTimeChart />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              <div className="flex flex-col h-full">
+                <ConcentrationChart />
+              </div>
+              <div className="flex flex-col h-full">
+                <CategoryTimeChart />
+              </div>
             </div>
           </div>
         );
       case "sessions":
         return (
-          <div className="space-y-6 pb-12">
+          <div className="space-y-6 md:space-y-8 pb-12">
             {liveSession?.isLive && <LiveObserverBanner />}
             <ActivityTimeline />
             <UpcomingModules />
@@ -105,13 +147,13 @@ export default function ParentDashboardPage() {
         );
       case "notes":
         return (
-          <div className="space-y-6 pb-12 max-w-2xl">
+          <div className="space-y-6 md:space-y-8 pb-12 max-w-3xl">
             <TherapistNotes />
           </div>
         );
       case "reports":
         return (
-          <div className="space-y-6 pb-12 max-w-4xl mx-auto">
+          <div className="space-y-6 md:space-y-8 pb-12 max-w-4xl mx-auto">
             <ClinicalReports />
           </div>
         );

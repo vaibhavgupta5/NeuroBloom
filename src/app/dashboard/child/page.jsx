@@ -2,6 +2,8 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useChildStore } from "../../../stores/useChildStore";
+import { useChildState } from "../../../hooks/useChildState";
+import { useParentActionListener } from "../../../hooks/useParentActionListener";
 import ChildLayout from "../../../components/child-dashboard/ChildLayout";
 import HomeScreen from "../../../components/child-dashboard/screens/HomeScreen";
 import PlayScreen from "../../../components/child-dashboard/screens/PlayScreen";
@@ -19,6 +21,10 @@ const screens = {
 
 export default function ChildDashboardPage() {
   const activeScreen = useChildStore((s) => s.activeScreen);
+
+  // Server data + realtime parent interventions
+  useChildState();
+  useParentActionListener();
 
   return (
     <ChildLayout>

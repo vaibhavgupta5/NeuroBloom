@@ -20,7 +20,7 @@ export default function Achievements() {
         </a>
       </div>
 
-      <div className="grid grid-cols-4 gap-3 flex-1 content-start">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 flex-1 content-start">
         {achievements.map((badge, index) => (
           <motion.div
             key={badge.id}
