@@ -69,66 +69,70 @@ export function useFaceEmotion() {
   }, [teardown]);
 
   const detectLoop = useCallback(() => {
-    const video = videoRef.current;
-    const landmarker = landmarkerRef.current;
-    if (!video || !landmarker || video.readyState < 2) {
-      rafRef.current = requestAnimationFrame(detectLoop);
-      return;
-    }
-
-    // Only run detection on fresh frames
-    if (video.currentTime !== lastVideoTimeRef.current) {
-      lastVideoTimeRef.current = video.currentTime;
-      try {
-        const result = landmarker.detectForVideo(video, performance.now());
-        if (result.faceLandmarks && result.faceLandmarks.length > 0) {
-          const reading = result.faceBlendshapes?.[0]?.categories
-            ? interpretBlendshapes(result.faceBlendshapes[0].categories)
-            : { emotion: "neutral", confidence: 0.5, scores: {} };
-
-          // Smooth over a rolling window so the label doesn't flicker
-          const win = windowRef.current;
-          win.push(reading);
-          if (win.length > SMOOTHING_WINDOW) win.shift();
-
-          const tally = {};
-          let confSum = 0;
-          for (const r of win) {
-            tally[r.emotion] = (tally[r.emotion] || 0) + 1;
-            confSum += r.confidence;
-          }
-          const smoothed =
-            Object.entries(tally).sort((a, b) => b[1] - a[1])[0][0];
-          const avgConf = confSum / win.length;
-
-          if (mountedRef.current) {
-            setEmotion(smoothed);
-            setEmotionConfidence(Math.round(avgConf * 100) / 100);
-          }
-        }
-      } catch {
-        // transient detection error — keep looping
+    function loop() {
+      const video = videoRef.current;
+      const landmarker = landmarkerRef.current;
+      if (!video || !landmarker || video.readyState < 2) {
+        rafRef.current = requestAnimationFrame(loop);
+        return;
       }
 
-      // Single-frame snapshot every 10s (replaces the previous one)
-      const now = Date.now();
-      if (now - lastSnapshotAtRef.current >= SNAPSHOT_INTERVAL_MS) {
-        lastSnapshotAtRef.current = now;
-        const snapCanvas = snapCanvasRef.current;
-        if (snapCanvas && video.readyState >= 2) {
-          try {
-            const ctx = snapCanvas.getContext("2d");
-            ctx.drawImage(video, 0, 0, snapCanvas.width, snapCanvas.height);
-            const data = snapCanvas.toDataURL("image/jpeg", 0.6);
-            if (mountedRef.current) setSnapshot(data);
-          } catch {
-            // frame grab failed — retry next interval
+      // Only run detection on fresh frames
+      if (video.currentTime !== lastVideoTimeRef.current) {
+        lastVideoTimeRef.current = video.currentTime;
+        try {
+          const result = landmarker.detectForVideo(video, performance.now());
+          if (result.faceLandmarks && result.faceLandmarks.length > 0) {
+            const reading = result.faceBlendshapes?.[0]?.categories
+              ? interpretBlendshapes(result.faceBlendshapes[0].categories)
+              : { emotion: "neutral", confidence: 0.5, scores: {} };
+
+            // Smooth over a rolling window so the label doesn't flicker
+            const win = windowRef.current;
+            win.push(reading);
+            if (win.length > SMOOTHING_WINDOW) win.shift();
+
+            const tally = {};
+            let confSum = 0;
+            for (const r of win) {
+              tally[r.emotion] = (tally[r.emotion] || 0) + 1;
+              confSum += r.confidence;
+            }
+            const smoothed =
+              Object.entries(tally).sort((a, b) => b[1] - a[1])[0][0];
+            const avgConf = confSum / win.length;
+
+            if (mountedRef.current) {
+              setEmotion(smoothed);
+              setEmotionConfidence(Math.round(avgConf * 100) / 100);
+            }
+          }
+        } catch {
+          // transient detection error — keep looping
+        }
+
+        // Single-frame snapshot every 10s (replaces the previous one)
+        const now = Date.now();
+        if (now - lastSnapshotAtRef.current >= SNAPSHOT_INTERVAL_MS) {
+          lastSnapshotAtRef.current = now;
+          const snapCanvas = snapCanvasRef.current;
+          if (snapCanvas && video.readyState >= 2) {
+            try {
+              const ctx = snapCanvas.getContext("2d");
+              ctx.drawImage(video, 0, 0, snapCanvas.width, snapCanvas.height);
+              const data = snapCanvas.toDataURL("image/jpeg", 0.6);
+              if (mountedRef.current) setSnapshot(data);
+            } catch {
+              // frame grab failed — retry next interval
+            }
           }
         }
       }
+
+      rafRef.current = requestAnimationFrame(loop);
     }
 
-    rafRef.current = requestAnimationFrame(detectLoop);
+    loop();
   }, []);
 
   const requestCamera = useCallback(async () => {

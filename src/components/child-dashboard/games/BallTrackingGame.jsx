@@ -19,7 +19,12 @@ export default function BallTrackingGame() {
   const { sendTelemetry, flushTelemetry } = useTelemetryEmitter();
   const { recordSession } = useSessionRecorder();
   const currentMood = useChildStore((s) => s.currentMood);
-  const { status: cameraStatus, emotion, emotionConfidence, snapshot, difficulty } = useCameraEmotion();
+  const { status: cameraStatus, emotion, emotionConfidence, snapshot, difficulty, requestCamera } = useCameraEmotion();
+
+  // Auto-request camera observation when child enters the game
+  useEffect(() => {
+    requestCamera();
+  }, [requestCamera]);
 
   const [score, setScore] = useState(0);
   const targetScore = 5;

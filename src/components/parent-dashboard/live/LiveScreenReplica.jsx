@@ -13,7 +13,8 @@ import {
   Apple, 
   Puzzle, 
   Type, 
-  Flame 
+  Flame,
+  Camera
 } from "lucide-react";
 
 export default function LiveScreenReplica({ liveSession }) {
@@ -23,7 +24,10 @@ export default function LiveScreenReplica({ liveSession }) {
     isLive, 
     score = 0, 
     targetScore = 5,
-    activeGame: rawActiveGame 
+    activeGame: rawActiveGame,
+    snapshotFrame,
+    emotion,
+    emotionConfidence
   } = liveSession;
 
   // Determine current active game code
@@ -267,8 +271,40 @@ export default function LiveScreenReplica({ liveSession }) {
         )}
 
         {/* Footer Target Position */}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md text-white/90 px-3 py-0.5 rounded-full text-[11px] font-dm-sans z-20">
+        <div className="absolute bottom-2 left-3 bg-black/60 backdrop-blur-md text-white/90 px-3 py-0.5 rounded-full text-[11px] font-dm-sans z-20">
           🎯 Touch position: ({Math.round(liveCoordinates.x)}%, {Math.round(liveCoordinates.y)}%)
+        </div>
+
+        {/* Camera Observation PIP Window */}
+        <div className="absolute bottom-3 right-3 z-30 w-24 sm:w-28 h-20 sm:h-24 bg-slate-950/90 rounded-2xl border-2 border-[#3ECFB2] shadow-xl overflow-hidden flex flex-col items-center justify-center p-0.5 group">
+          {snapshotFrame ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={snapshotFrame}
+              alt="Child Live Observation Stream"
+              className="w-full h-full object-cover rounded-xl"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center text-center p-1">
+              <div className="relative mb-0.5">
+                <Camera size={18} className="text-[#3ECFB2] animate-pulse" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#3ECFB2] rounded-full animate-ping" />
+              </div>
+              <span className="font-dm-sans text-[9px] font-extrabold text-[#3ECFB2] uppercase tracking-tighter leading-tight">
+                Camera Feed
+              </span>
+              <span className="font-dm-sans text-[8px] text-white/60">AI Observing</span>
+            </div>
+          )}
+
+          {/* Emotion Badge Pill */}
+          <div className="absolute top-1 left-1 bg-black/80 backdrop-blur-md px-1.5 py-0.5 rounded-md border border-[#3ECFB2]/50 text-[9px] font-bold text-[#3ECFB2] flex items-center gap-0.5 shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#3ECFB2] animate-pulse" />
+            <span className="capitalize">{emotion || "Active"}</span>
+            {emotionConfidence > 0 ? (
+              <span className="text-white/80">({Math.round(emotionConfidence * 100)}%)</span>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>

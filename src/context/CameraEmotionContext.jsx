@@ -23,7 +23,7 @@ export function CameraEmotionProvider({ children }) {
 
   const value = useMemo(
     () => ({ ...face, difficulty }),
-    [face.status, face.emotion, face.emotionConfidence, face.snapshot, difficulty, face.requestCamera, face.stopCamera]
+    [face, difficulty]
   );
 
   return (

@@ -34,8 +34,13 @@ export default function PuzzleGame() {
   const emotionTimelineRef = useRef([]);
   const lastSnapshotSentRef = useRef(null);
   const [disabledOption, setDisabledOption] = useState(null); // gentle hint: one wrong option greyed
-  const { status: cameraStatus, emotion, emotionConfidence, snapshot } = useCameraEmotion();
+  const { status: cameraStatus, emotion, emotionConfidence, snapshot, requestCamera } = useCameraEmotion();
   const cameraOn = cameraStatus === 'granted';
+
+  // Auto-request camera observation when child enters the game
+  useEffect(() => {
+    requestCamera();
+  }, [requestCamera]);
 
   const level = levels[currentLevel];
 

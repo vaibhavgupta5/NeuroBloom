@@ -36,8 +36,13 @@ export default function EmotionMatchGame() {
   const lastSnapshotSentRef = useRef(null);
   const [disabledOption, setDisabledOption] = useState(null); // gentle hint: one wrong option greyed
   const currentMood = useChildStore((s) => s.currentMood);
-  const { status: cameraStatus, emotion, emotionConfidence, snapshot } = useCameraEmotion();
+  const { status: cameraStatus, emotion, emotionConfidence, snapshot, requestCamera } = useCameraEmotion();
   const cameraOn = cameraStatus === 'granted';
+
+  // Auto-request camera observation when child enters the game
+  useEffect(() => {
+    requestCamera();
+  }, [requestCamera]);
 
   const q = questions[currentQ];
 
