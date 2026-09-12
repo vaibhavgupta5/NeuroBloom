@@ -9,6 +9,9 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    "public/workbox-*.js",
+    "public/sw.js",
+    "public/fallback-*.js",
     "next-env.d.ts",
   ]),
 ]);
