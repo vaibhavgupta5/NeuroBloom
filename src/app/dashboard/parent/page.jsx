@@ -18,16 +18,21 @@ import VocabularyGrowthChart from "../../../components/parent-dashboard/Vocabula
 import CompletionRateChart from "../../../components/parent-dashboard/CompletionRateChart";
 import SleepMoodChart from "../../../components/parent-dashboard/SleepMoodChart";
 import ClinicalReports from "../../../components/parent-dashboard/ClinicalReports";
+import LiveObserverBanner from "../../../components/parent-dashboard/live/LiveObserverBanner";
+import UnifiedTelemetryHUD from "../../../components/parent-dashboard/live/UnifiedTelemetryHUD";
 import { useParentStore } from "../../../stores/useParentStore";
 
 export default function ParentDashboardPage() {
-  const { activeTab } = useParentStore();
+  const { activeTab, liveSession } = useParentStore();
 
   const renderContent = () => {
     switch (activeTab) {
+      case "live":
+        return <UnifiedTelemetryHUD />;
       case "overview":
         return (
           <>
+            {liveSession?.isLive && <LiveObserverBanner />}
             <StatsRow />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
@@ -91,6 +96,7 @@ export default function ParentDashboardPage() {
       case "sessions":
         return (
           <div className="space-y-6 pb-12">
+            {liveSession?.isLive && <LiveObserverBanner />}
             <ActivityTimeline />
             <UpcomingModules />
           </div>

@@ -24,6 +24,18 @@ import SmoothScroll from '../components/SmoothScroll';
 export const metadata = {
   title: 'NeuroBloom | Where Every Child\'s Brain Gets to Bloom',
   description: 'Science-backed, game-based therapy for children on the autism spectrum.',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'NeuroBloom',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport = {
+  themeColor: '#E8FAF6',
 };
 
 export default function RootLayout({ children }) {

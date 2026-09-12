@@ -2,26 +2,19 @@
 
 import { motion } from "framer-motion";
 import { useParentStore } from "../../stores/useParentStore";
-import { Trophy, Flame, Puzzle, Smile, MessageCircle, Star, Palette, Lock } from "lucide-react";
+import { SvgIconBadge } from "../ui/SvgIconBadge";
+import { Trophy, Lock } from "lucide-react";
 
 export default function Achievements() {
   const { achievements, child } = useParentStore();
 
-  const badgeIconMap = {
-    '🔥': <Flame size={32} className="text-[#FF7E6B]" />,
-    '🧩': <Puzzle size={32} className="text-[#4A90D9]" />,
-    '😊': <Smile size={32} className="text-[#3ECFB2]" />,
-    '🗣️': <MessageCircle size={32} className="text-[#C4B5FD]" />,
-    '⭐': <Star size={32} className="text-[#FFB020]" fill="currentColor" />,
-    '🌟': <Star size={32} className="text-[#FFB020]" />,
-    '🏅': <Trophy size={32} className="text-[#FFB020]" />,
-    '🎭': <Palette size={32} className="text-[#4A90D9]" />,
-  };
-
   return (
     <div className="bg-white/55 backdrop-blur-lg border border-white/60 rounded-3xl p-6 shadow-[0_8px_32px_rgba(62,207,178,0.12),0_2px_8px_rgba(0,0,0,0.05)] h-full flex flex-col">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="font-nunito font-bold text-xl text-[#1B2D3E] flex items-center">{child.name}'s Achievements <Trophy size={20} className="text-[#FFB020] ml-2" /></h2>
+        <h2 className="font-nunito font-bold text-xl text-[#1B2D3E] flex items-center gap-2">
+          <span>{child.name}'s Achievements</span>
+          <Trophy size={20} className="text-[#FFB020]" />
+        </h2>
         <a href="#" className="font-dm-sans text-xs text-[#3ECFB2] font-bold hover:text-[#1A9E8C] transition-colors">
           View All &rarr;
         </a>
@@ -41,7 +34,9 @@ export default function Achievements() {
                 : "bg-white/30 border border-white/50 opacity-50 grayscale"
             }`}
           >
-            <div className="mb-1">{badgeIconMap[badge.emoji] || badge.emoji}</div>
+            <div className="mb-1">
+              <SvgIconBadge type={badge.iconKey || "star"} size={26} variant={badge.unlocked ? "amber" : "ghost"} />
+            </div>
             <div className="font-dm-sans text-[10px] font-bold text-center leading-tight text-[#1B2D3E]">
               {badge.label}
             </div>

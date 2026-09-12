@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import { useParentStore } from "../../stores/useParentStore";
 import Link from "next/link";
-import { Home, TrendingUp, Smile, Gamepad2, ClipboardList, Stethoscope, Settings, Leaf, Flame } from "lucide-react";
+import { Home, Radio, TrendingUp, Smile, Gamepad2, ClipboardList, Stethoscope, Settings, Leaf, Flame } from "lucide-react";
 
 export default function Sidebar() {
   const { child, parent, activeTab, setActiveTab } = useParentStore();
 
   const navItems = [
     { id: "overview", icon: <Home size={20} />, label: "Overview" },
+    { id: "live", icon: <Radio size={20} className="animate-pulse text-[#3ECFB2]" />, label: "Live Tracking" },
     { id: "progress", icon: <TrendingUp size={20} />, label: "Progress" },
     { id: "mood", icon: <Smile size={20} />, label: "Mood & Emotions" },
     { id: "sessions", icon: <Gamepad2 size={20} />, label: "Sessions" },
@@ -26,7 +26,6 @@ export default function Sidebar() {
           <span className="flex items-center text-[#3ECFB2]"><Leaf size={24} /></span>
           <h1 className="font-nunito font-bold text-[#3ECFB2] text-xl tracking-tight relative">
             NeuroBloom
-            
           </h1>
         </div>
 

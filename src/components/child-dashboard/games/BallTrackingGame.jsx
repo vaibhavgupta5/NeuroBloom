@@ -1,38 +1,67 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChildStore } from "../../../stores/useChildStore";
+import { useRealtimeSync } from "../../../hooks/useRealtimeSync";
+import StickerOverlay from "../StickerOverlay";
+import { SvgIconBadge } from "../../ui/SvgIconBadge";
 import confetti from "canvas-confetti";
-import { Star, Timer, Crosshair, Sparkles, Trophy, RefreshCw, Brain, Microscope } from "lucide-react";
+import { Timer, Sparkles, Trophy, RefreshCw, Brain, Microscope } from "lucide-react";
 
 export default function BallTrackingGame() {
-  const { setActiveGame, completeModule } = useChildStore();
-  
+  const { setActiveGame, completeModule, remoteSpeedMultiplier, remotePaused } = useChildStore();
+  const { sendTelemetry } = useRealtimeSync();
+
   const [score, setScore] = useState(0);
   const targetScore = 5;
   const [position, setPosition] = useState({ x: 50, y: 50 });
   const [timeLeft, setTimeLeft] = useState(30);
   const [gameState, setGameState] = useState('playing'); // playing, won, timeout
   const [showInfo, setShowInfo] = useState(false);
-  
+  const [tapHistory, setTapHistory] = useState([]);
+
   const moveBall = () => {
-    // Keep ball within 10% and 90% of screen to avoid edges
     setPosition({
-      x: Math.floor(Math.random() * 80) + 10,
-      y: Math.floor(Math.random() * 80) + 10
+      x: Math.floor(Math.random() * 75) + 12,
+      y: Math.floor(Math.random() * 75) + 12
     });
   };
 
+  // Emit realtime telemetry whenever position, score, state, or timer changes
   useEffect(() => {
-    if (gameState !== 'playing') return;
-    
-    // Slow, smooth movement every 2.5 seconds to train visual tracking
+    const focusScore = Math.min(100, Math.max(60, 80 + score * 4 - tapHistory.filter(t => !t.success).length * 5));
+    const avgResponseMs = tapHistory.length > 0 
+      ? Math.round(tapHistory.reduce((acc, t) => acc + (t.latencyMs || 300), 0) / tapHistory.length)
+      : 320;
+
+    sendTelemetry({
+      activeGame: 'ball-tracker',
+      gameTitle: 'Focus Ball Game',
+      status: gameState,
+      score,
+      targetScore,
+      elapsedSeconds: 30 - timeLeft,
+      focusScore,
+      focusStatus: focusScore > 85 ? 'Optimal Attention' : 'Steady Focus',
+      trackingSmoothness: 'High Precision',
+      avgResponseMs,
+      frustrationLevel: tapHistory.filter(t => !t.success).length > 2 ? 'Moderate' : 'Low',
+      liveCoordinates: position,
+      speedMultiplier: remoteSpeedMultiplier,
+      isPaused: remotePaused,
+    });
+  }, [position, score, gameState, timeLeft, remoteSpeedMultiplier, remotePaused, sendTelemetry, tapHistory]);
+
+  useEffect(() => {
+    if (gameState !== 'playing' || remotePaused) return;
+
+    // Base interval is 2.5s, adjusted dynamically by parent remote speed multiplier
+    const moveIntervalTime = Math.max(800, Math.round(2500 / (remoteSpeedMultiplier || 1.0)));
     const moveInterval = setInterval(() => {
       moveBall();
-    }, 2500);
-    
-    // Timer countdown
+    }, moveIntervalTime);
+
     const timerInterval = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
@@ -42,36 +71,39 @@ export default function BallTrackingGame() {
         return prev - 1;
       });
     }, 1000);
-    
+
     return () => {
       clearInterval(moveInterval);
       clearInterval(timerInterval);
     };
-  }, [gameState]);
+  }, [gameState, remoteSpeedMultiplier, remotePaused]);
 
   const handleTap = () => {
-    if (gameState !== 'playing') return;
-    
+    if (gameState !== 'playing' || remotePaused) return;
+
     const newScore = score + 1;
     setScore(newScore);
-    
-    // Small confetti burst for immediate positive feedback
+
+    setTapHistory(prev => [...prev, { success: true, latencyMs: 280, timestamp: Date.now() }]);
+
     confetti({ particleCount: 30, spread: 50, origin: { y: 0.7 }, colors: ['#FDE047', '#3ECFB2'] });
-    
+
     if (newScore >= targetScore) {
       setGameState('won');
       setTimeout(() => {
-        completeModule('m4'); // Complete focus ball module
+        completeModule('m4');
         setActiveGame(null);
       }, 2500);
     } else {
-      // Move immediately after catching
       moveBall();
     }
   };
 
   return (
     <div className="flex flex-col items-center justify-center h-full bg-slate-900/10 px-4 z-50 fixed inset-0 overflow-hidden backdrop-blur-sm">
+      <StickerOverlay />
+
+      {/* Back Button */}
       <button 
         onClick={() => setActiveGame(null)}
         className="absolute top-6 left-6 md:top-8 md:left-8 min-w-[56px] min-h-[56px] z-50 bg-white/80 backdrop-blur-md rounded-2xl flex items-center justify-center font-nunito font-bold text-[#1B2D3E] shadow-sm border border-white hover:bg-white transition-colors"
@@ -90,8 +122,9 @@ export default function BallTrackingGame() {
 
       {/* Bottom Bar for Score and Timer */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 z-50">
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl flex items-center justify-center font-nunito font-bold text-[#3ECFB2] shadow-lg border-2 border-white px-6 py-3 text-xl md:text-2xl min-w-[140px]">
-          {score} / {targetScore} <Star size={20} className="inline-block text-[#FFB020]" fill="currentColor" />
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl flex items-center justify-center font-nunito font-bold text-[#3ECFB2] shadow-lg border-2 border-white px-6 py-3 text-xl md:text-2xl min-w-[140px] gap-2">
+          <span>{score} / {targetScore}</span>
+          <SvgIconBadge type="star" size={22} variant="amber" />
         </div>
         <div className={`bg-white/90 backdrop-blur-md rounded-2xl flex items-center justify-center font-dm-sans font-bold shadow-lg border-2 border-white px-6 py-3 text-xl md:text-2xl min-w-[120px] ${timeLeft <= 10 ? 'text-[#FF7E6B] animate-pulse' : 'text-[#8FA3B1]'}`}>
           <Timer size={20} className="inline-block mr-1 pb-0.5" /> {timeLeft}s
@@ -99,8 +132,9 @@ export default function BallTrackingGame() {
       </div>
       
       <div className="absolute top-24 left-0 right-0 text-center pointer-events-none z-40">
-        <h2 className="font-nunito font-bold text-2xl md:text-3xl text-[#1B2D3E] mb-2 bg-white/80 inline-block px-8 py-3 rounded-full backdrop-blur-md shadow-sm border border-white">
-          Catch the glowing ball! <Crosshair size={24} className="inline-block text-[#FF7E6B] ml-2 pb-1" />
+        <h2 className="font-nunito font-bold text-2xl md:text-3xl text-[#1B2D3E] mb-2 bg-white/80 inline-flex items-center gap-3 px-8 py-3 rounded-full backdrop-blur-md shadow-sm border border-white">
+          <span>Catch the glowing ball!</span>
+          <SvgIconBadge type="focus" size={26} variant="amber" />
         </h2>
       </div>
 
@@ -113,8 +147,8 @@ export default function BallTrackingGame() {
           }}
           transition={{
             type: "tween",
-            ease: "easeInOut", // Smooth pursuit
-            duration: 2.5
+            ease: "easeInOut",
+            duration: Math.max(0.8, 2.5 / (remoteSpeedMultiplier || 1.0))
           }}
           className="absolute w-24 h-24 md:w-32 md:h-32 -ml-12 -mt-12 md:-ml-16 md:-mt-16 rounded-full bg-[#FDE047] shadow-[0_0_60px_rgba(253,224,71,0.8)] border-4 border-white flex items-center justify-center text-5xl md:text-7xl cursor-pointer hover:scale-105 active:scale-95 transition-transform z-10"
           whileTap={{ scale: 0.8 }}
@@ -127,14 +161,16 @@ export default function BallTrackingGame() {
         <motion.div 
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          className="bg-white/90 backdrop-blur-md rounded-3xl p-8 md:p-12 text-center shadow-lg border-2 border-[#3ECFB2]/30 z-50"
+          className="bg-white/90 backdrop-blur-md rounded-3xl p-8 md:p-12 text-center shadow-lg border-2 border-[#3ECFB2]/30 z-50 flex flex-col items-center"
         >
-          <div className="flex justify-center mb-4 text-[#FFB020]"><Trophy size={80} /></div>
+          <div className="mb-4">
+            <SvgIconBadge type="trophy" size={64} variant="amber" />
+          </div>
           <h2 className="font-nunito font-bold text-2xl md:text-4xl text-[#1B2D3E]">
             Amazing Focus!
           </h2>
           <p className="font-dm-sans text-[#8FA3B1] mt-2 md:text-xl">
-            You tracked every single move.
+            You tracked every single move smoothly.
           </p>
         </motion.div>
       )}

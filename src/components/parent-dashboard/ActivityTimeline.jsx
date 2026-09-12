@@ -2,23 +2,11 @@
 
 import { motion } from "framer-motion";
 import { useParentStore } from "../../stores/useParentStore";
-import { staggerContainer, fadeUp } from "../../lib/animations";
-import { Star, Palette, MessageCircle, Puzzle, Gamepad2, Smile, Meh } from "lucide-react";
+import { staggerContainer } from "../../lib/animations";
+import { SvgIconBadge } from "../ui/SvgIconBadge";
 
 export default function ActivityTimeline() {
   const { sessionTimeline, child } = useParentStore();
-
-  const iconMap = {
-    '🎭': <Palette size={20} className="text-[#4A90D9]" />,
-    '🗣️': <MessageCircle size={20} className="text-[#4A90D9]" />,
-    '🧩': <Puzzle size={20} className="text-[#4A90D9]" />
-  };
-
-  const moodIconMap = {
-    '😊': <Smile size={14} className="text-[#3ECFB2]" />,
-    '😐': <Meh size={14} className="text-[#FFB020]" />,
-    '😄': <Smile size={14} className="text-[#3ECFB2]" />
-  };
 
   return (
     <div className="bg-white/55 backdrop-blur-lg border border-white/60 rounded-3xl p-6 shadow-[0_8px_32px_rgba(62,207,178,0.12),0_2px_8px_rgba(0,0,0,0.05)] h-full flex flex-col">
@@ -49,9 +37,7 @@ export default function ActivityTimeline() {
 
               <div className="font-dm-sans text-xs text-[#8FA3B1] mb-1 font-bold">{event.time}</div>
               <div className="flex items-center gap-3 bg-white/70 backdrop-blur-sm border border-white rounded-2xl p-3 shadow-sm">
-                <div className="w-10 h-10 rounded-xl bg-[#4A90D9]/10 flex items-center justify-center text-xl shrink-0">
-                  {iconMap[event.emoji] || <Gamepad2 size={20} className="text-[#4A90D9]" />}
-                </div>
+                <SvgIconBadge type={event.iconKey || "emotion"} size={22} variant="blue" />
                 <div className="flex-1 min-w-0">
                   <div className="font-nunito font-bold text-[#1B2D3E] text-sm truncate">
                     {event.module}
@@ -59,8 +45,9 @@ export default function ActivityTimeline() {
                   <div className="flex flex-wrap items-center gap-2 text-xs text-[#8FA3B1] mt-0.5">
                     <span>⏱ {event.duration}</span>
                     <span>·</span>
-                    <span className="flex items-center gap-1">
-                      Mood: {moodIconMap[event.moodEmoji] || event.moodEmoji} <span className="text-[#1B2D3E] font-medium">{event.mood}</span>
+                    <span className="flex items-center gap-1.5">
+                      Mood: <SvgIconBadge type={event.moodIconKey || "happy"} size={14} variant="ghost" className="p-0 border-0" />
+                      <span className="text-[#1B2D3E] font-medium">{event.mood}</span>
                     </span>
                     <span>·</span>
                     <span>Score: <span className="text-[#3ECFB2] font-bold">{event.score}%</span></span>
@@ -74,7 +61,8 @@ export default function ActivityTimeline() {
 
       <div className="mt-4 pt-4 border-t border-white/60">
         <div className="bg-[#E8FAF6] text-[#1A9E8C] px-4 py-3 rounded-xl text-sm font-dm-sans font-bold flex items-center gap-2 shadow-sm border border-white">
-          <span className="text-[#FFB020]"><Star size={16} fill="currentColor" /></span> Session ended. Great job, {child.name}!
+          <SvgIconBadge type="star" size={16} variant="amber" />
+          <span>Session ended. Great job, {child.name}!</span>
         </div>
       </div>
     </div>

@@ -11,14 +11,45 @@ export const useParentStore = create((set) => ({
     totalModules: 34,
     avgMoodScore: 4.2,
   },
+
+  // Live Session Telemetry State
+  liveSession: {
+    isLive: false,
+    childName: 'Arjun',
+    activeGame: 'ball-tracker',
+    gameTitle: 'Focus Ball Game',
+    status: 'playing',
+    score: 3,
+    targetScore: 5,
+    elapsedSeconds: 24,
+    focusScore: 88,
+    focusStatus: 'Optimal Attention',
+    trackingSmoothness: 'High Precision',
+    avgResponseMs: 310,
+    frustrationLevel: 'Low',
+    liveCoordinates: { x: 50, y: 50 },
+    tapRipples: [],
+    speedMultiplier: 1.0,
+    isPaused: false,
+  },
+
+  updateLiveTelemetry: (payload) =>
+    set((state) => ({
+      liveSession: {
+        ...state.liveSession,
+        ...payload,
+        isLive: true,
+      },
+    })),
+
   weeklyMoodData: [
-    { day: 'Mon', score: 3.5, emoji: '😐' },
-    { day: 'Tue', score: 4.0, emoji: '😊' },
-    { day: 'Wed', score: 3.8, emoji: '😊' },
-    { day: 'Thu', score: 4.5, emoji: '😄' },
-    { day: 'Fri', score: 4.2, emoji: '😊' },
-    { day: 'Sat', score: 4.7, emoji: '😄' },
-    { day: 'Sun', score: 4.2, emoji: '😊' },
+    { day: 'Mon', score: 3.5, iconKey: 'neutral' },
+    { day: 'Tue', score: 4.0, iconKey: 'happy' },
+    { day: 'Wed', score: 3.8, iconKey: 'happy' },
+    { day: 'Thu', score: 4.5, iconKey: 'happy' },
+    { day: 'Fri', score: 4.2, iconKey: 'happy' },
+    { day: 'Sat', score: 4.7, iconKey: 'happy' },
+    { day: 'Sun', score: 4.2, iconKey: 'happy' },
   ],
   concentrationData: [
     { day: 'Mon', focusScore: 75, attentionSpan: 12 },
@@ -104,9 +135,9 @@ export const useParentStore = create((set) => ({
     { week: 'Week 4', independent: 63, prompted: 30, skipped: 7  },
   ],
   sessionTimeline: [
-    { time: '9:15 AM', module: 'Emotion Match Game',         emoji: '🎭', duration: '8 min',  mood: 'Happy',   moodEmoji: '😊', score: 85 },
-    { time: '9:23 AM', module: 'Picture Communication Board', emoji: '🗣️', duration: '5 min', mood: 'Neutral', moodEmoji: '😐', score: 70 },
-    { time: '9:28 AM', module: 'Shape Sorting Puzzle',        emoji: '🧩', duration: '5 min', mood: 'Happy',   moodEmoji: '😊', score: 92 },
+    { time: '9:15 AM', module: 'Emotion Match Game',         iconKey: 'emotion', emoji: '🎭', duration: '8 min',  mood: 'Happy',   moodIconKey: 'happy', score: 85 },
+    { time: '9:23 AM', module: 'Picture Communication Board', iconKey: 'speech',  emoji: '🗣️', duration: '5 min', mood: 'Neutral', moodIconKey: 'neutral', score: 70 },
+    { time: '9:28 AM', module: 'Shape Sorting Puzzle',        iconKey: 'puzzle',  emoji: '🧩', duration: '5 min', mood: 'Happy',   moodIconKey: 'happy', score: 92 },
   ],
   therapistNotes: [
     {
@@ -123,18 +154,18 @@ export const useParentStore = create((set) => ({
     },
   ],
   achievements: [
-    { id: '1', emoji: '🔥', label: '7-Day Streak',    unlocked: true  },
-    { id: '2', emoji: '🧩', label: 'Puzzle Master',   unlocked: true  },
-    { id: '3', emoji: '😊', label: 'Happy Explorer',  unlocked: true  },
-    { id: '4', emoji: '🗣️', label: 'First Words',    unlocked: true  },
-    { id: '5', emoji: '⭐', label: 'Top Scorer',      unlocked: true  },
-    { id: '6', emoji: '🌟', label: 'Week Champion',   unlocked: true  },
-    { id: '7', emoji: '🏅', label: '30-Day Streak',   unlocked: false },
-    { id: '8', emoji: '🎭', label: 'Social Star',     unlocked: false },
+    { id: '1', iconKey: 'flame',   label: '7-Day Streak',    unlocked: true  },
+    { id: '2', iconKey: 'puzzle',  label: 'Puzzle Master',   unlocked: true  },
+    { id: '3', iconKey: 'happy',   label: 'Happy Explorer',  unlocked: true  },
+    { id: '4', iconKey: 'speech',  label: 'First Words',    unlocked: true  },
+    { id: '5', iconKey: 'star',    label: 'Top Scorer',      unlocked: true  },
+    { id: '6', iconKey: 'trophy',  label: 'Week Champion',   unlocked: true  },
+    { id: '7', iconKey: 'award',   label: '30-Day Streak',   unlocked: false },
+    { id: '8', iconKey: 'emotion', label: 'Social Star',     unlocked: false },
   ],
   upcomingModules: [
-    { id: '1', emoji: '🎭', title: 'Social Story: At the Playground', duration: '8 min', skill: 'Social',        difficulty: 2 },
-    { id: '2', emoji: '🔤', title: 'Vocabulary Builder: Feelings',     duration: '6 min', skill: 'Communication', difficulty: 1 },
-    { id: '3', emoji: '🧩', title: 'Pattern Puzzle Level 5',           duration: '7 min', skill: 'Cognitive',     difficulty: 3 },
+    { id: '1', iconKey: 'emotion', title: 'Social Story: At the Playground', duration: '8 min', skill: 'Social',        difficulty: 2 },
+    { id: '2', iconKey: 'word',    title: 'Vocabulary Builder: Feelings',     duration: '6 min', skill: 'Communication', difficulty: 1 },
+    { id: '3', iconKey: 'puzzle',  title: 'Pattern Puzzle Level 5',           duration: '7 min', skill: 'Cognitive',     difficulty: 3 },
   ],
 }))
