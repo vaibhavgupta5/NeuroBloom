@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useParentStore } from "../../stores/useParentStore";
 import { staggerContainer } from "../../lib/animations";
 import { SvgIconBadge } from "../ui/SvgIconBadge";
+import { EMOTION_META } from "../../lib/emotionUtils";
 
 export default function ActivityTimeline() {
   const { sessionTimeline, child } = useParentStore();
@@ -49,6 +50,23 @@ export default function ActivityTimeline() {
                       Mood: <SvgIconBadge type={event.moodIconKey || "happy"} size={14} variant="ghost" className="p-0 border-0" />
                       <span className="text-[#1B2D3E] font-medium">{event.mood}</span>
                     </span>
+                    {event.emotion && (
+                      <>
+                        <span>·</span>
+                        <span className="flex items-center gap-1">
+                          <span className="font-dm-sans">Camera:</span>
+                          <span
+                            className="px-1.5 py-0.5 rounded-full text-[10px] font-bold font-dm-sans"
+                            style={{
+                              backgroundColor: `${EMOTION_META[event.emotion]?.color || "#8FA3B1"}22`,
+                              color: EMOTION_META[event.emotion]?.color || "#8FA3B1",
+                            }}
+                          >
+                            {EMOTION_META[event.emotion]?.label || event.emotion}
+                          </span>
+                        </span>
+                      </>
+                    )}
                     <span>·</span>
                     <span>Score: <span className="text-[#3ECFB2] font-bold">{event.score}%</span></span>
                   </div>

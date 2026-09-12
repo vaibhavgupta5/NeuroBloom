@@ -18,7 +18,7 @@ export async function POST(request) {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { moduleCode, score = 0, maxScore = 5, durationSec = 0, focusScore = 0, avgResponseMs = 0, outcome = "completed", moodBefore = null, wordsLearned = 0 } = body;
+  const { moduleCode, score = 0, maxScore = 5, durationSec = 0, focusScore = 0, avgResponseMs = 0, outcome = "completed", moodBefore = null, wordsLearned = 0, emotionSummary = null } = body;
 
   if (!moduleCode) {
     return Response.json({ error: "moduleCode is required" }, { status: 400 });
@@ -38,6 +38,21 @@ export async function POST(request) {
   const startedAt = new Date(completedAt.getTime() - Math.max(0, durationSec) * 1000);
   const accuracy = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
 
+  // After-game camera emotion summary (no snapshots — those live only on LiveSession)
+  let cleanEmotionSummary = null;
+  if (emotionSummary && typeof emotionSummary === "object") {
+    cleanEmotionSummary = {
+      dominant: typeof emotionSummary.dominant === "string" ? emotionSummary.dominant : null,
+      avgConfidence: Number(emotionSummary.avgConfidence) || 0,
+      timeline: Array.isArray(emotionSummary.timeline)
+        ? emotionSummary.timeline
+            .filter((p) => p && typeof p.emotion === "string")
+            .slice(-20)
+            .map((p) => ({ t: Number(p.t) || 0, emotion: p.emotion }))
+        : [],
+    };
+  }
+
   await Session.create({
     childId: child._id,
     moduleCode,
@@ -54,6 +69,7 @@ export async function POST(request) {
     outcome,
     moodBefore,
     wordsLearned: moduleCode === "word-match" ? wordsLearned : 0,
+    emotionSummary: cleanEmotionSummary,
   });
 
   // Stars: 1–4 based on accuracy

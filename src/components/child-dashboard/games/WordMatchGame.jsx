@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useChildStore } from "../../../stores/useChildStore";
 import { useTelemetryEmitter } from "../../../hooks/useTelemetryEmitter";
 import { useSessionRecorder } from "../../../hooks/useRealtimeSync";
+import { useCameraEmotion } from "../../../context/CameraEmotionContext";
+import { summarizeEmotionTimeline } from "../../../lib/emotionUtils";
 import confetti from "canvas-confetti";
 import { Apple, Cat, Car, HelpCircle, Heart, Star, Brain, Microscope } from "lucide-react";
 
@@ -27,12 +29,43 @@ export default function WordMatchGame() {
   const [showInfo, setShowInfo] = useState(false);
   const startedAtRef = useRef(Date.now());
   const mistakesRef = useRef(0);
+  const consecutiveWrongRef = useRef(0); // auto-mode frustration signal
+  const emotionTimelineRef = useRef([]);
+  const lastSnapshotSentRef = useRef(null);
+  const [disabledOption, setDisabledOption] = useState(null); // gentle hint: one wrong option greyed
+  const { status: cameraStatus, emotion, emotionConfidence, snapshot } = useCameraEmotion();
+  const cameraOn = cameraStatus === 'granted';
 
   const level = levels[currentLevel];
+
+  // Emotion-adaptive difficulty: frustration/anger/stress (camera) or
+  // 2+ consecutive wrong answers (auto mode) greys out one wrong option.
+  useEffect(() => {
+    const frustrated = cameraOn
+      ? ['frustrated', 'angry', 'stressed'].includes(emotion)
+      : consecutiveWrongRef.current >= 2;
+    if (frustrated) {
+      setDisabledOption(prev => {
+        if (prev !== null) return prev;
+        const wrong = level.options.filter((o) => o !== level.correct);
+        return wrong[Math.floor(Math.random() * wrong.length)];
+      });
+    } else {
+      setDisabledOption(null);
+    }
+  }, [emotion, cameraOn, currentLevel, level]);
 
   // Live telemetry for the parent observer
   useEffect(() => {
     const focusScore = Math.min(100, Math.max(55, 90 - mistakesRef.current * 10 + currentLevel * 3));
+
+    // Camera snapshot goes out only when it changed (~every 10s)
+    const snapshotPayload = {};
+    if (cameraOn && snapshot && snapshot !== lastSnapshotSentRef.current) {
+      lastSnapshotSentRef.current = snapshot;
+      snapshotPayload.snapshotFrame = snapshot;
+    }
+
     sendTelemetry({
       status: "playing",
       activeGame: MODULE_CODE,
@@ -46,8 +79,22 @@ export default function WordMatchGame() {
       avgResponseMs: 0,
       frustrationLevel: mistakesRef.current > 2 ? "Moderate" : "Low",
       liveCoordinates: { x: 50, y: 50 },
+      emotion: cameraOn ? emotion : null,
+      emotionConfidence: cameraOn ? emotionConfidence : 0,
+      ...snapshotPayload,
     });
-  }, [currentLevel, sendTelemetry]);
+  }, [currentLevel, sendTelemetry, cameraOn, emotion, emotionConfidence, snapshot]);
+
+  // Track camera emotion changes for the after-game summary
+  useEffect(() => {
+    if (!cameraOn || !emotion) return;
+    const t = Math.round((Date.now() - startedAtRef.current) / 1000);
+    const timeline = emotionTimelineRef.current;
+    if (timeline.length === 0 || timeline[timeline.length - 1].emotion !== emotion) {
+      timeline.push({ t, emotion });
+      if (timeline.length > 20) timeline.shift();
+    }
+  }, [emotion, cameraOn]);
 
   const finishSession = (correctCount) => {
     const durationSec = Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000));
@@ -58,6 +105,8 @@ export default function WordMatchGame() {
       gameTitle: "Word Match",
       score: correctCount,
       targetScore: levels.length,
+      emotion: cameraOn ? emotion : null,
+      emotionConfidence: cameraOn ? emotionConfidence : 0,
     });
     recordSession({
       moduleCode: MODULE_CODE,
@@ -69,11 +118,13 @@ export default function WordMatchGame() {
       outcome: "completed",
       moodBefore: currentMood,
       wordsLearned: correctCount,
+      emotionSummary: cameraOn ? summarizeEmotionTimeline(emotionTimelineRef.current) : null,
     });
   };
 
   const handleSelect = (option) => {
     if (option === level.correct) {
+      consecutiveWrongRef.current = 0;
       setFeedback("correct");
       if (currentLevel === levels.length - 1) {
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
@@ -85,10 +136,12 @@ export default function WordMatchGame() {
         setTimeout(() => {
           setCurrentLevel(prev => prev + 1);
           setFeedback(null);
+          setDisabledOption(null);
         }, 1200);
       }
     } else {
       mistakesRef.current += 1;
+      consecutiveWrongRef.current += 1;
       setFeedback("wrong");
       setTimeout(() => setFeedback(null), 1000);
     }
@@ -133,8 +186,9 @@ export default function WordMatchGame() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => handleSelect(option)}
-              disabled={feedback !== null}
+              disabled={feedback !== null || (disabledOption === option && feedback !== "correct")}
               className={`w-full py-4 md:py-5 rounded-2xl font-nunito font-bold text-xl md:text-2xl border-2 transition-colors ${
+                disabledOption === option && feedback !== "correct" ? "opacity-40 grayscale pointer-events-none bg-gray-100 border-gray-200 text-gray-400" :
                 feedback === "correct" && option === level.correct ? "bg-[#3ECFB2]/20 border-[#3ECFB2] text-[#1A9E8C]" :
                 feedback === "wrong" && option !== level.correct ? "bg-gray-100 border-gray-200 text-gray-400" :
                 "bg-white border-white/60 shadow-sm text-[#1B2D3E] hover:border-[#3ECFB2]/50 hover:bg-white/90"

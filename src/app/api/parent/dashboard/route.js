@@ -149,6 +149,8 @@ export async function GET() {
       mood: MOOD_ID_TO_LABEL[s.moodBefore] || "—",
       moodIconKey: s.moodBefore ? MOOD_ICON[{ great: 5, good: 4, ok: 3, notgreat: 2, sad: 1 }[s.moodBefore]] : null,
       score: s.accuracy,
+      emotion: s.emotionSummary?.dominant || null,
+      emotionTimeline: s.emotionSummary?.timeline || [],
     }));
 
   // ---- Prompt dependency (4 weeks, accuracy binned) --------------------------

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import LiveScreenReplica from "./LiveScreenReplica";
+import LiveEmotionCard from "./LiveEmotionCard";
 import ParentRemoteControls from "./ParentRemoteControls";
 import InteractiveMetricModal from "./InteractiveMetricModal";
 import { SvgIconBadge } from "../../ui/SvgIconBadge";
@@ -119,7 +120,7 @@ export default function UnifiedTelemetryHUD() {
         </div>
       </div>
 
-      {/* Interactive Telemetry Metrics Panel (3 Interactive Cards) */}
+      {/* Interactive Telemetry Metrics Panel (3 interactive cards + emotion radar) */}
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-3 md:mb-4">
           <h3 className="font-nunito font-bold text-lg md:text-xl text-[#1B2D3E] flex items-center gap-2">
@@ -130,7 +131,7 @@ export default function UnifiedTelemetryHUD() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
           {metrics.map((m) => (
             <div
               key={m.id}
@@ -154,6 +155,9 @@ export default function UnifiedTelemetryHUD() {
               </div>
             </div>
           ))}
+
+          {/* Camera emotion radar + snapshot frame (not clickable) */}
+          <LiveEmotionCard />
         </div>
       </div>
 

@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useChildStore } from "../../../stores/useChildStore";
 import { useTelemetryEmitter } from "../../../hooks/useTelemetryEmitter";
 import { useSessionRecorder } from "../../../hooks/useRealtimeSync";
+import { useCameraEmotion } from "../../../context/CameraEmotionContext";
+import { summarizeEmotionTimeline } from "../../../lib/emotionUtils";
 import { Smile, Frown, Meh, Star, Gamepad2, Heart, Brain, PartyPopper, Microscope } from "lucide-react";
 
 const MODULE_CODE = "emotion-match";
@@ -29,14 +31,48 @@ export default function EmotionMatchGame() {
   const [showInfo, setShowInfo] = useState(false);
   const startedAtRef = useRef(Date.now());
   const mistakesRef = useRef(0);
+  const consecutiveWrongRef = useRef(0); // auto-mode frustration signal
+  const emotionTimelineRef = useRef([]);
+  const lastSnapshotSentRef = useRef(null);
+  const [disabledOption, setDisabledOption] = useState(null); // gentle hint: one wrong option greyed
   const currentMood = useChildStore((s) => s.currentMood);
+  const { status: cameraStatus, emotion, emotionConfidence, snapshot } = useCameraEmotion();
+  const cameraOn = cameraStatus === 'granted';
 
   const q = questions[currentQ];
+
+  // Emotion-adaptive difficulty: frustration/anger/stress (camera) or
+  // 2+ consecutive wrong answers (auto mode) greys out one wrong option.
+  // Reverts when the child is calm/happy again.
+  useEffect(() => {
+    if (showResult) return;
+    const frustrated = cameraOn
+      ? ['frustrated', 'angry', 'stressed'].includes(emotion)
+      : consecutiveWrongRef.current >= 2;
+    if (frustrated) {
+      setDisabledOption(prev => (prev !== null ? prev : pickWrongOption(q.correct)));
+    } else {
+      setDisabledOption(null);
+    }
+  }, [emotion, cameraOn, currentQ, showResult, q]);
+
+  const pickWrongOption = (correctIndex) => {
+    const wrong = [0, 1, 2].filter((i) => i !== correctIndex);
+    return wrong[Math.floor(Math.random() * wrong.length)];
+  };
 
   // Live telemetry for the parent observer
   useEffect(() => {
     if (showResult) return;
     const focusScore = Math.min(100, Math.max(55, 90 - mistakesRef.current * 8 + score * 2));
+
+    // Camera snapshot goes out only when it changed (~every 10s)
+    const snapshotPayload = {};
+    if (cameraOn && snapshot && snapshot !== lastSnapshotSentRef.current) {
+      lastSnapshotSentRef.current = snapshot;
+      snapshotPayload.snapshotFrame = snapshot;
+    }
+
     sendTelemetry({
       status: "playing",
       activeGame: MODULE_CODE,
@@ -50,8 +86,22 @@ export default function EmotionMatchGame() {
       avgResponseMs: 0,
       frustrationLevel: mistakesRef.current > 2 ? "Moderate" : "Low",
       liveCoordinates: { x: 50, y: 50 },
+      emotion: cameraOn ? emotion : null,
+      emotionConfidence: cameraOn ? emotionConfidence : 0,
+      ...snapshotPayload,
     });
-  }, [currentQ, score, showResult, sendTelemetry]);
+  }, [currentQ, score, showResult, sendTelemetry, cameraOn, emotion, emotionConfidence, snapshot]);
+
+  // Track camera emotion changes for the after-game summary
+  useEffect(() => {
+    if (!cameraOn || !emotion) return;
+    const t = Math.round((Date.now() - startedAtRef.current) / 1000);
+    const timeline = emotionTimelineRef.current;
+    if (timeline.length === 0 || timeline[timeline.length - 1].emotion !== emotion) {
+      timeline.push({ t, emotion });
+      if (timeline.length > 20) timeline.shift();
+    }
+  }, [emotion, cameraOn]);
 
   const finishSession = (finalScore) => {
     const durationSec = Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000));
@@ -63,6 +113,8 @@ export default function EmotionMatchGame() {
       gameTitle: "Feelings Game",
       score: finalScore,
       targetScore: questions.length,
+      emotion: cameraOn ? emotion : null,
+      emotionConfidence: cameraOn ? emotionConfidence : 0,
     });
     recordSession({
       moduleCode: MODULE_CODE,
@@ -73,6 +125,7 @@ export default function EmotionMatchGame() {
       avgResponseMs: 0,
       outcome: "completed",
       moodBefore: currentMood,
+      emotionSummary: cameraOn ? summarizeEmotionTimeline(emotionTimelineRef.current) : null,
     });
   };
 
@@ -83,6 +136,7 @@ export default function EmotionMatchGame() {
     const isCorrect = index === q.correct;
 
     if (isCorrect) {
+      consecutiveWrongRef.current = 0;
       setLastAnswerCorrect(true);
       setScore(s => s + 1);
       setTimeout(() => {
@@ -90,6 +144,7 @@ export default function EmotionMatchGame() {
           setCurrentQ(c => c + 1);
           setLastAnswerCorrect(null);
           setSelectedOpt(null);
+          setDisabledOption(null);
         } else {
           setShowResult(true);
           finishSession(score + 1);
@@ -97,6 +152,7 @@ export default function EmotionMatchGame() {
       }, 1500);
     } else {
       mistakesRef.current += 1;
+      consecutiveWrongRef.current += 1;
       setLastAnswerCorrect(false);
       setTimeout(() => {
         setLastAnswerCorrect(null);
@@ -111,8 +167,12 @@ export default function EmotionMatchGame() {
     setShowResult(false);
     setLastAnswerCorrect(null);
     setSelectedOpt(null);
+    setDisabledOption(null);
     startedAtRef.current = Date.now();
     mistakesRef.current = 0;
+    consecutiveWrongRef.current = 0;
+    emotionTimelineRef.current = [];
+    lastSnapshotSentRef.current = null;
   };
 
   if (showResult) {
@@ -218,8 +278,9 @@ export default function EmotionMatchGame() {
         <div className="w-full space-y-4 relative">
           {q.options.map((opt, i) => {
             const isSelected = selectedOpt === i;
+            const isHintDisabled = disabledOption === i && !isSelected;
             let btnClass = "bg-white/70 border-white/80";
-            
+
             if (isSelected) {
               if (lastAnswerCorrect === true) btnClass = "bg-[#3ECFB2]/30 border-[#3ECFB2]";
               if (lastAnswerCorrect === false) btnClass = "bg-[#FFF4E3] border-[#FFA94D]";
@@ -231,7 +292,10 @@ export default function EmotionMatchGame() {
                   whileTap={{ scale: 0.97 }}
                   animate={isSelected && lastAnswerCorrect === true ? { scale: [1, 1.05, 1] } : { scale: 1 }}
                   onClick={() => handleAnswer(i)}
-                  className={`w-full min-h-[64px] rounded-2xl backdrop-blur-sm border-2 font-nunito font-bold text-[18px] text-[#1B2D3E] transition-colors relative z-10 ${btnClass}`}
+                  disabled={isHintDisabled}
+                  className={`w-full min-h-[64px] rounded-2xl backdrop-blur-sm border-2 font-nunito font-bold text-[18px] text-[#1B2D3E] transition-colors relative z-10 ${
+                    isHintDisabled ? "opacity-40 grayscale pointer-events-none" : ""
+                  } ${btnClass}`}
                 >
                   {opt}
                 </motion.button>

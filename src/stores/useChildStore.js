@@ -19,6 +19,10 @@ export const useChildStore = create((set, get) => ({
   activeScreen: 'home',
   activeGame: null,
 
+  // Camera emotion mirrors (source of truth = CameraEmotionContext)
+  cameraStatus: 'idle',
+  emotion: null,
+
   // Realtime parent intervention state (applied locally via SSE parent-action events)
   activeSticker: null,
   remoteSpeedMultiplier: 1.0,
@@ -36,6 +40,8 @@ export const useChildStore = create((set, get) => ({
     displaySettings: { ...state.displaySettings, ...settings }
   })),
   setMood: (mood) => set({ currentMood: mood }),
+  setCameraStatus: (status) => set({ cameraStatus: status }),
+  setEmotion: (emotion) => set({ emotion }),
 
   // Hydrate from GET /api/child/state (or the response of POST /api/sessions)
   hydrateChildState: (data) => set({

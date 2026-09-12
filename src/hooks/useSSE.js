@@ -7,7 +7,8 @@ import { useEffect, useRef } from "react";
  * events to callbacks. EventSource auto-reconnects on connection drops.
  *
  * Events:
- *  - telemetry     → live game snapshot (parent dashboards)
+ *  - telemetry     → live game snapshot (parent dashboards; camera frame stripped)
+ *  - snapshot      → single camera frame, only when it changed (~every 10s)
  *  - parent-action → sticker/speed/pause commands (child screen)
  *  - refresh       → a new Session was saved; refetch aggregates
  */
@@ -29,7 +30,7 @@ export function useSSE(handlers) {
       });
     };
 
-    ["telemetry", "parent-action", "refresh"].forEach(bind);
+    ["telemetry", "snapshot", "parent-action", "refresh"].forEach(bind);
 
     return () => es.close();
   }, []);

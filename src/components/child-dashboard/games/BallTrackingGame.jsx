@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useChildStore } from "../../../stores/useChildStore";
 import { useTelemetryEmitter } from "../../../hooks/useTelemetryEmitter";
 import { useSessionRecorder } from "../../../hooks/useRealtimeSync";
+import { useCameraEmotion } from "../../../context/CameraEmotionContext";
+import { computeDifficultyAdjust, summarizeEmotionTimeline } from "../../../lib/emotionUtils";
 import StickerOverlay from "../StickerOverlay";
 import { SvgIconBadge } from "../../ui/SvgIconBadge";
 import confetti from "canvas-confetti";
@@ -17,6 +19,7 @@ export default function BallTrackingGame() {
   const { sendTelemetry, flushTelemetry } = useTelemetryEmitter();
   const { recordSession } = useSessionRecorder();
   const currentMood = useChildStore((s) => s.currentMood);
+  const { status: cameraStatus, emotion, emotionConfidence, snapshot, difficulty } = useCameraEmotion();
 
   const [score, setScore] = useState(0);
   const targetScore = 5;
@@ -26,6 +29,24 @@ export default function BallTrackingGame() {
   const [showInfo, setShowInfo] = useState(false);
   const [tapHistory, setTapHistory] = useState([]);
   const startedAtRef = useRef(Date.now());
+  const emotionTimelineRef = useRef([]); // {t, emotion} whenever the camera emotion changes
+  const lastSnapshotSentRef = useRef(null);
+
+  const cameraOn = cameraStatus === 'granted';
+
+  // Blend camera emotion with gameplay accuracy; auto mode = gameplay only
+  const gameplayAccuracy = tapHistory.length > 0
+    ? Math.round((tapHistory.filter(t => t.success).length / tapHistory.length) * 100)
+    : null;
+  const adjust = computeDifficultyAdjust(
+    cameraOn ? emotion : null,
+    gameplayAccuracy
+  );
+  // Parent remote speed × emotion difficulty (both apply)
+  const effectiveSpeedMultiplier = Math.max(
+    0.5,
+    (remoteSpeedMultiplier || 1.0) * (cameraOn ? difficulty.speedMultiplier : adjust.speedMultiplier)
+  );
 
   const moveBall = () => {
     setPosition({
@@ -55,6 +76,8 @@ export default function BallTrackingGame() {
       gameTitle: "Focus Ball Game",
       score: finalScore,
       targetScore,
+      emotion: cameraOn ? emotion : null,
+      emotionConfidence: cameraOn ? emotionConfidence : 0,
     });
 
     recordSession({
@@ -66,13 +89,32 @@ export default function BallTrackingGame() {
       avgResponseMs,
       outcome, // 'completed' | 'abandoned'
       moodBefore: currentMood,
+      emotionSummary: cameraOn ? summarizeEmotionTimeline(emotionTimelineRef.current) : null,
     });
   };
+
+  // Track camera emotion changes for the after-game summary
+  useEffect(() => {
+    if (!cameraOn || !emotion) return;
+    const t = Math.round((Date.now() - startedAtRef.current) / 1000);
+    const timeline = emotionTimelineRef.current;
+    if (timeline.length === 0 || timeline[timeline.length - 1].emotion !== emotion) {
+      timeline.push({ t, emotion });
+      if (timeline.length > 20) timeline.shift();
+    }
+  }, [emotion, cameraOn]);
 
   // Emit realtime telemetry whenever position, score, state, or timer changes (throttled by the hook)
   useEffect(() => {
     if (gameState !== 'playing') return;
     const { focusScore, avgResponseMs } = computeMetrics(score, tapHistory);
+
+    // Camera snapshot goes out only when it changed (~every 10s), not every tick
+    const snapshotPayload = {};
+    if (cameraOn && snapshot && snapshot !== lastSnapshotSentRef.current) {
+      lastSnapshotSentRef.current = snapshot;
+      snapshotPayload.snapshotFrame = snapshot;
+    }
 
     sendTelemetry({
       activeGame: MODULE_CODE,
@@ -87,15 +129,20 @@ export default function BallTrackingGame() {
       avgResponseMs,
       frustrationLevel: tapHistory.filter(t => !t.success).length > 2 ? 'Moderate' : 'Low',
       liveCoordinates: position,
-      speedMultiplier: remoteSpeedMultiplier,
+      speedMultiplier: effectiveSpeedMultiplier,
+      emotion: cameraOn ? emotion : null,
+      emotionConfidence: cameraOn ? emotionConfidence : 0,
+      ...snapshotPayload,
     });
-  }, [position, score, gameState, timeLeft, remoteSpeedMultiplier, remotePaused, sendTelemetry, tapHistory]);
+  }, [position, score, gameState, timeLeft, remoteSpeedMultiplier, remotePaused, sendTelemetry, tapHistory, cameraOn, emotion, emotionConfidence, snapshot, effectiveSpeedMultiplier]);
 
   useEffect(() => {
     if (gameState !== 'playing' || remotePaused) return;
 
-    // Base interval is 2.5s, adjusted dynamically by parent remote speed multiplier
-    const moveIntervalTime = Math.max(800, Math.round(2500 / (remoteSpeedMultiplier || 1.0)));
+    // Base interval 2.5s. Speed = parent remote multiplier × emotion-difficulty
+    // multiplier (frustration/stress slows the ball; joy with good accuracy
+    // nudges it faster). Clamped so it never gets frantic.
+    const moveIntervalTime = Math.max(900, Math.round(2500 / effectiveSpeedMultiplier));
     const moveInterval = setInterval(() => {
       moveBall();
     }, moveIntervalTime);
@@ -114,7 +161,7 @@ export default function BallTrackingGame() {
       clearInterval(moveInterval);
       clearInterval(timerInterval);
     };
-  }, [gameState, remoteSpeedMultiplier, remotePaused]);
+  }, [gameState, effectiveSpeedMultiplier, remotePaused]);
 
   // Persist the session when the game ends (win or timeout)
   useEffect(() => {
@@ -152,6 +199,8 @@ export default function BallTrackingGame() {
     setGameState('playing');
     setTapHistory([]);
     startedAtRef.current = Date.now();
+    emotionTimelineRef.current = [];
+    lastSnapshotSentRef.current = null;
     moveBall();
   };
 
@@ -204,7 +253,7 @@ export default function BallTrackingGame() {
           transition={{
             type: "tween",
             ease: "easeInOut",
-            duration: Math.max(0.8, 2.5 / (remoteSpeedMultiplier || 1.0))
+            duration: Math.max(0.8, 2.5 / effectiveSpeedMultiplier)
           }}
           className="absolute w-24 h-24 md:w-32 md:h-32 -ml-12 -mt-12 md:-ml-16 md:-mt-16 rounded-full bg-[#FDE047] shadow-[0_0_60px_rgba(253,224,71,0.8)] border-4 border-white flex items-center justify-center text-5xl md:text-7xl cursor-pointer hover:scale-105 active:scale-95 transition-transform z-10"
           whileTap={{ scale: 0.8 }}

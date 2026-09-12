@@ -35,6 +35,7 @@ export function useLiveSession() {
 
   useSSE({
     telemetry: (data) => updateLiveTelemetry(data),
+    snapshot: (data) => updateLiveTelemetry({ snapshotFrame: data.snapshotFrame }),
   });
 
   return null;

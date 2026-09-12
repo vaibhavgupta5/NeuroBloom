@@ -4,6 +4,7 @@ import ParentLayout from "../../../components/parent-dashboard/ParentLayout";
 import HeaderBar from "../../../components/parent-dashboard/HeaderBar";
 import StatsRow from "../../../components/parent-dashboard/StatsRow";
 import ActivityTimeline from "../../../components/parent-dashboard/ActivityTimeline";
+import SessionEmotionSummary from "../../../components/parent-dashboard/SessionEmotionSummary";
 import TherapistNotes from "../../../components/parent-dashboard/TherapistNotes";
 import MoodChart from "../../../components/parent-dashboard/MoodChart";
 import SkillBars from "../../../components/parent-dashboard/SkillBars";
@@ -54,6 +55,9 @@ export default function ParentDashboardPage() {
                 <TherapistNotes />
               </div>
             </div>
+
+            {/* After-game camera emotion insights */}
+            <SessionEmotionSummary />
             
             {/* Mood + Concentration */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">

@@ -26,6 +26,7 @@ export async function POST(request) {
     "status", "activeGame", "gameTitle", "score", "targetScore", "elapsedSeconds",
     "focusScore", "focusStatus", "trackingSmoothness", "avgResponseMs",
     "frustrationLevel", "liveCoordinates", "speedMultiplier",
+    "emotion", "emotionConfidence", "snapshotFrame",
   ];
   for (const f of fields) {
     if (body[f] !== undefined) update[f] = body[f];

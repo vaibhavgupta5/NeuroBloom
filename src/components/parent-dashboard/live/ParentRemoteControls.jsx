@@ -3,13 +3,14 @@
 import { useParentActionSender } from "../../../hooks/useRealtimeSync";
 import { useParentStore } from "../../../stores/useParentStore";
 import { SvgIconBadge } from "../../ui/SvgIconBadge";
-import { Send, Pause, Play, Gauge, HeartHandshake } from "lucide-react";
+import { Send, Pause, Play, Gauge, HeartHandshake, AlertCircle } from "lucide-react";
 
 export default function ParentRemoteControls({ liveSession }) {
   const { sendParentAction } = useParentActionSender();
   const child = useParentStore((s) => s.child);
   const currentSpeed = liveSession.speedMultiplier || 1.0;
   const isPaused = liveSession.isPaused || false;
+  const frustrated = ["frustrated", "angry", "stressed"].includes(liveSession.emotion);
 
   const stickers = [
     { id: "s1", label: "Super Focus", iconKey: "star", text: "Super Focus! ⭐" },
@@ -92,6 +93,12 @@ export default function ParentRemoteControls({ liveSession }) {
             />
             <span className="text-xs font-dm-sans text-[#8FA3B1]">Fast</span>
           </div>
+          {frustrated && (
+            <div className="mt-2 flex items-center gap-2 bg-[#FF7E6B]/10 border border-[#FF7E6B]/25 text-[#FF7E6B] px-3 py-2 rounded-xl text-[11px] font-dm-sans font-bold">
+              <AlertCircle size={14} className="shrink-0" />
+              {child.name} seems frustrated — the game is auto-slowing to help
+            </div>
+          )}
         </div>
       </div>
 

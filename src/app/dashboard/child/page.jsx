@@ -10,6 +10,8 @@ import PlayScreen from "../../../components/child-dashboard/screens/PlayScreen";
 import StarsScreen from "../../../components/child-dashboard/screens/StarsScreen";
 import ScheduleScreen from "../../../components/child-dashboard/screens/ScheduleScreen";
 import FeelScreen from "../../../components/child-dashboard/screens/FeelScreen";
+import CameraEmotionBadge from "../../../components/child-dashboard/CameraEmotionBadge";
+import { CameraEmotionProvider } from "../../../context/CameraEmotionContext";
 
 const screens = {
   home: <HomeScreen />,
@@ -27,8 +29,9 @@ export default function ChildDashboardPage() {
   useParentActionListener();
 
   return (
-    <ChildLayout>
-      <AnimatePresence mode="wait">
+    <CameraEmotionProvider>
+      <ChildLayout>
+        <AnimatePresence mode="wait">
         <motion.div
           key={activeScreen}
           initial={{ opacity: 0, x: 20 }}
@@ -40,6 +43,10 @@ export default function ChildDashboardPage() {
           {screens[activeScreen]}
         </motion.div>
       </AnimatePresence>
-    </ChildLayout>
+
+      {/* Camera emotion pill — permission prompt, live emotion, or auto mode */}
+      <CameraEmotionBadge />
+      </ChildLayout>
+    </CameraEmotionProvider>
   );
 }

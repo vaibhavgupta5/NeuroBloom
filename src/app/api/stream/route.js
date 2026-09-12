@@ -8,7 +8,9 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 // Server-Sent Events stream. Both dashboards subscribe to this single endpoint:
-//  - parent listens for `telemetry` (live game updates) and `refresh` (new session saved)
+//  - parent listens for `telemetry` (live game updates, WITHOUT the camera
+//    frame to keep events light), `snapshot` (camera frame, only when it
+//    changed — every ~10s), and `refresh` (new session saved)
 //  - child listens for `parent-action` (stickers, speed, pause)
 // The loop polls Mongo once per second — fine for the single-family demo scale.
 export async function GET(request) {
@@ -42,11 +44,15 @@ export async function GET(request) {
         }
       };
 
-      // Initial snapshot so subscribers paint immediately
+      // Initial snapshot so subscribers paint immediately (telemetry without
+      // the heavy frame; frame goes out as its own event right after)
       const initialLive = await LiveSession.findOne({ childId: child._id }).lean();
-      send("telemetry", { ...initialLive, childName: child.name });
+      const { snapshotFrame: initialSnapshot, ...initialRest } = initialLive || {};
+      send("telemetry", { ...initialRest, childName: child.name });
+      if (initialSnapshot) send("snapshot", { snapshotFrame: initialSnapshot });
 
       let lastUpdatedAt = initialLive ? new Date(initialLive.updatedAt).getTime() : 0;
+      let lastSnapshotFrame = initialSnapshot || null;
       let lastSessionAt = 0;
       let lastActionId = null;
 
@@ -60,13 +66,19 @@ export async function GET(request) {
         if (closed) return;
 
         try {
-          // 1) Live telemetry changes
+          // 1) Live telemetry changes (frame stripped — sent as its own event)
           const live = await LiveSession.findOne({ childId: child._id }).lean();
           if (live) {
+            const { snapshotFrame, ...rest } = live;
             const ts = new Date(live.updatedAt).getTime();
             if (ts !== lastUpdatedAt) {
               lastUpdatedAt = ts;
-              send("telemetry", { ...live, childName: child.name });
+              send("telemetry", { ...rest, childName: child.name });
+            }
+            // Camera frame: pushed only when it actually changed (~every 10s)
+            if (snapshotFrame && snapshotFrame !== lastSnapshotFrame) {
+              lastSnapshotFrame = snapshotFrame;
+              send("snapshot", { snapshotFrame });
             }
           }
 
