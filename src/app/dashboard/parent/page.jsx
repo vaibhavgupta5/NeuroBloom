@@ -22,6 +22,8 @@ import LiveObserverBanner from "../../../components/parent-dashboard/live/LiveOb
 import UnifiedTelemetryHUD from "../../../components/parent-dashboard/live/UnifiedTelemetryHUD";
 import { useParentStore } from "../../../stores/useParentStore";
 
+import { motion, AnimatePresence } from "framer-motion";
+
 export default function ParentDashboardPage() {
   const { activeTab, liveSession } = useParentStore();
 
@@ -124,7 +126,17 @@ export default function ParentDashboardPage() {
     <ParentLayout>
       <HeaderBar />
       <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto w-full">
-        {renderContent()}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+          >
+            {renderContent()}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </ParentLayout>
   );
