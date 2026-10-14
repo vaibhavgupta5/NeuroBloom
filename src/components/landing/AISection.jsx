@@ -24,7 +24,7 @@ export default function AISection() {
     {
       icon: <FileText />,
       title: "AI-assisted therapist reports",
-      desc: "A therapist can draft a progress report from your child's real session data using Claude — then reviews and edits it before you ever see it"
+      desc: "A therapist can draft a progress report from your child's real session data using Gemini — then reviews and edits it before you ever see it"
     }
   ];
 

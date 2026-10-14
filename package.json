@@ -10,8 +10,8 @@
     "seed": "node --env-file=.env.local scripts/seed.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.133.0",
     "@ducanh2912/next-pwa": "^10.2.9",
+    "@google/genai": "^2.29.1",
     "@mediapipe/tasks-vision": "^1.0.1",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",

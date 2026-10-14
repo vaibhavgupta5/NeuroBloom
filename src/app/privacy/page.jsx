@@ -30,7 +30,7 @@ const SECTIONS = [
   {
     h: "AI-drafted reports",
     p: [
-      "When a therapist asks for a report draft, a summary of the numbers (not names of other children, not camera data) is sent to Anthropic's Claude API to write a first draft. The therapist reviews and edits it before parents can see it.",
+      "When a therapist asks for a report draft, a summary of the numbers (not names of other children, not camera data) is sent to Google's Gemini API to write a first draft. The therapist reviews and edits it before parents can see it.",
     ],
   },
   {

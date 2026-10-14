@@ -1,16 +1,15 @@
 import "server-only";
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI, Type } from "@google/genai";
 
 const SCHEMA = {
-  type: "object",
+  type: Type.OBJECT,
   properties: {
-    summary: { type: "string", description: "2-3 sentence plain-language summary for the family" },
-    progress: { type: "string", description: "Paragraph on skill and goal progress, citing the numbers given" },
-    regulation: { type: "string", description: "Paragraph on mood, sleep and behaviour logs, or note the data is sparse" },
-    recommendations: { type: "array", items: { type: "string" }, description: "3-5 concrete next steps for home and therapy" },
+    summary: { type: Type.STRING, description: "2-3 sentence plain-language summary for the family" },
+    progress: { type: Type.STRING, description: "Paragraph on skill and goal progress, citing the numbers given" },
+    regulation: { type: Type.STRING, description: "Paragraph on mood, sleep and behaviour logs, or note the data is sparse" },
+    recommendations: { type: Type.ARRAY, items: { type: Type.STRING }, description: "3-5 concrete next steps for home and therapy" },
   },
   required: ["summary", "progress", "regulation", "recommendations"],
-  additionalProperties: false,
 };
 
 const SYSTEM = `You draft progress reports for a paediatric developmental therapist using a home practice app for autistic children.
@@ -18,37 +17,30 @@ Write in warm, neurodiversity-affirming, plain language that a parent can read.
 Use only the metrics provided. Never invent numbers, diagnoses, or events. If data is missing or sparse, say so.
 Do not make diagnostic or medical claims. This is a draft the therapist will review and edit.`;
 
-/** Structured metrics → report sections. Uses Claude when ANTHROPIC_API_KEY is set, a template otherwise. */
+/** Structured metrics → report sections. Uses Gemini when GEMINI_API_KEY is set, a template otherwise. */
 export async function draftReport(metrics) {
-  if (!process.env.ANTHROPIC_API_KEY) return { ...templateReport(metrics), generatedBy: "template" };
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!apiKey) return { ...templateReport(metrics), generatedBy: "template" };
 
-  const client = new Anthropic();
+  const ai = new GoogleGenAI({ apiKey });
   let response;
   try {
-    response = await client.beta.messages.create({
-      model: "claude-opus-5",
-      max_tokens: 16000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      thinking: { type: "adaptive" },
-      output_config: { effort: "medium", format: { type: "json_schema", schema: SCHEMA } },
-      system: SYSTEM,
-      messages: [{ role: "user", content: `Metrics for the reporting period (JSON):\n${JSON.stringify(metrics, null, 2)}` }],
+    response = await ai.models.generateContent({
+      model: "gemini-3.5-flash-lite",
+      contents: `Metrics for the reporting period (JSON):\n${JSON.stringify(metrics, null, 2)}`,
+      config: {
+        systemInstruction: SYSTEM,
+        responseMimeType: "application/json",
+        responseSchema: SCHEMA,
+      },
     });
   } catch (err) {
-    if (err instanceof Anthropic.APIError) {
-      console.error(`Report draft API error ${err.status}:`, err.message);
-      return { ...templateReport(metrics), generatedBy: "template" };
-    }
-    throw err;
-  }
-
-  if (response.stop_reason === "refusal" || response.stop_reason === "max_tokens") {
+    console.error(`Report draft API error${err?.status ? ` ${err.status}` : ""}:`, err?.message || err);
     return { ...templateReport(metrics), generatedBy: "template" };
   }
-  const text = response.content.find((b) => b.type === "text")?.text;
+
   try {
-    return { ...JSON.parse(text), generatedBy: "ai" };
+    return { ...JSON.parse(response.text), generatedBy: "ai" };
   } catch {
     return { ...templateReport(metrics), generatedBy: "template" };
   }
