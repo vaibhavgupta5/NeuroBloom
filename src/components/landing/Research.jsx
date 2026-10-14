@@ -3,14 +3,34 @@
 import { motion } from "framer-motion";
 import { staggerContainer, fadeUp } from "../../lib/animations";
 
-export default function Research() {
-  const methodologies = [
-    "ABA Therapy", "Discrete Trial Training", "Natural Environment Teaching", 
-    "ATEC Tracking", "SRS Measurement", "Prompt Fading"
-  ];
+const PRACTICES = [
+  "Visual Supports", "First-Then Boards", "Prompt Fading", "Parent-Mediated Teaching", "Least-to-Most Prompting",
+];
 
+const FINDINGS = [
+  {
+    claim: "Visual Supports and First-Then boards are named evidence-based practices",
+    detail: "The National Clearinghouse on Autism Evidence and Practice's 2020 review found Visual Supports met the bar for an evidence-based practice across 104 single-case studies, spanning ages 0–22.",
+    source: "AFIRM / NCAEP, 2020",
+    href: "https://afirm.fpg.unc.edu/wp-content/uploads/Visual-Supports-Brief-Packet.pdf",
+  },
+  {
+    claim: "Serious games have improved emotion recognition in published trials",
+    detail: "A 2024 systematic review of serious games for autistic children and teens found emotion recognition improved in both studies that measured it, alongside gains in joint attention and behaviour.",
+    source: "Healthcare, 2024 (PubMed 38470619)",
+    href: "https://pubmed.ncbi.nlm.nih.gov/38470619/",
+  },
+  {
+    claim: "Parent-mediated strategies move the needle, not just clinic time",
+    detail: "Randomized trials of parent-mediated interventions (JASPER and similar models) found caregivers who were coached in simple joint-engagement strategies produced real gains in their child's engagement.",
+    source: "PMC, randomized comparative trial",
+    href: "https://pmc.ncbi.nlm.nih.gov/articles/PMC4755315/",
+  },
+];
+
+export default function Research() {
   return (
-    <section className="py-24 bg-[#E8FAF6] overflow-hidden">
+    <section id="research" className="py-24 bg-mint overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           variants={staggerContainer}
@@ -18,69 +38,50 @@ export default function Research() {
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
         >
-          <motion.div variants={fadeUp} className="text-center mb-16">
-            <span className="font-dm-sans text-[#1A9E8C] font-semibold mb-3 block text-lg bg-white/50 px-4 py-1.5 rounded-full inline-block border border-white/60">
-              Evidence-Based
+          <motion.div variants={fadeUp} className="text-center mb-14">
+            <span className="font-dm-sans text-teal-700 font-semibold mb-3 block text-lg bg-white/50 px-4 py-1.5 rounded-full inline-block border border-white/60">
+              Built on published research
             </span>
-            <h2 className="font-nunito font-bold text-3xl md:text-[38px] text-[#1B2D3E]">
-              Not Just Fun — Clinically Grounded
+            <h2 className="font-nunito font-bold text-3xl md:text-[38px] text-ink">
+              The techniques are proven. NeuroBloom isn&apos;t a clinical trial — yet.
             </h2>
-          </motion.div>
-
-          {/* Marquee Pills */}
-          <motion.div variants={fadeUp} className="relative w-full overflow-hidden mb-20 py-4">
-            <div className="absolute left-0 top-0 w-20 h-full bg-gradient-to-r from-[#E8FAF6] to-transparent z-10 pointer-events-none"></div>
-            <div className="absolute right-0 top-0 w-20 h-full bg-gradient-to-l from-[#E8FAF6] to-transparent z-10 pointer-events-none"></div>
-            
-            <div className="flex w-max space-x-6 animate-[scroll_20s_linear_infinite]">
-              {[...methodologies, ...methodologies].map((method, idx) => (
-                <motion.div
-                  key={idx}
-                  className="bg-white/60 backdrop-blur-sm border border-white/80 rounded-full px-6 py-3 text-sm md:text-base font-medium text-[#1A9E8C] shadow-sm flex items-center whitespace-nowrap"
-                  animate={{ backgroundPosition: ["0% 50%", "200% 50%"] }}
-                  transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-                  style={{
-                    backgroundImage: "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0) 100%)",
-                    backgroundSize: "200% 100%"
-                  }}
-                >
-                  <span className="text-[#3ECFB2] mr-2">✦</span> {method}
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Stat Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-            <motion.div variants={fadeUp} className="clay-card p-10 border-l-4 border-l-[#3ECFB2] border-t-white/60 border-r-white/60 border-b-white/60 flex flex-col justify-center">
-              <div className="font-sora text-5xl md:text-6xl font-bold text-[#3ECFB2] mb-4">47%</div>
-              <p className="font-dm-sans text-lg text-[#1B2D3E] font-medium leading-relaxed">
-                improvement in communication outcomes in children receiving early ABA-based digital intervention
-              </p>
-            </motion.div>
-            
-            <motion.div variants={fadeUp} className="clay-card p-10 border-l-4 border-l-[#4A90D9] border-t-white/60 border-r-white/60 border-b-white/60 flex flex-col justify-center">
-              <div className="font-sora text-5xl md:text-6xl font-bold text-[#4A90D9] mb-4">95%+</div>
-              <p className="font-dm-sans text-lg text-[#1B2D3E] font-medium leading-relaxed">
-                treatment adherence in digital therapeutic programs vs. 60% in traditional clinic settings
-              </p>
-            </motion.div>
-          </div>
-
-          <motion.div variants={fadeUp} className="text-center max-w-3xl mx-auto">
-            <p className="font-dm-sans font-medium text-xl text-[#1B2D3E] leading-relaxed px-6">
-              NeuroBloom combines behavioral science with computational logic — the next generation of evidence-based digital therapy.
+            <p className="font-dm-sans text-ink-soft text-lg max-w-2xl mx-auto mt-4 leading-relaxed">
+              We didn&apos;t invent these methods. We built an app around them. Here&apos;s what the underlying research
+              actually found — read the papers, don&apos;t just take our word for it.
             </p>
           </motion.div>
+
+          <motion.div variants={fadeUp} className="flex flex-wrap justify-center gap-3 mb-16">
+            {PRACTICES.map((p) => (
+              <span key={p} className="bg-white/60 border border-white/80 rounded-full px-5 py-2.5 text-sm font-medium text-teal-700 shadow-sm">
+                {p}
+              </span>
+            ))}
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {FINDINGS.map((f) => (
+              <motion.a
+                key={f.claim}
+                href={f.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                variants={fadeUp}
+                className="clay-card p-7 flex flex-col gap-3 bg-white/70 hover:bg-white transition-colors"
+              >
+                <h3 className="font-nunito font-bold text-lg text-ink leading-snug">{f.claim}</h3>
+                <p className="font-dm-sans text-[15px] text-ink-soft leading-relaxed flex-1">{f.detail}</p>
+                <span className="font-dm-sans text-xs font-bold text-teal-700 underline">{f.source} ↗</span>
+              </motion.a>
+            ))}
+          </div>
+
+          <motion.p variants={fadeUp} className="text-center font-dm-sans text-sm text-muted mt-10 max-w-2xl mx-auto">
+            NeuroBloom is a pilot product, not a diagnosed medical device. It&apos;s built to work alongside your
+            child&apos;s existing care, not replace it.
+          </motion.p>
         </motion.div>
       </div>
-
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes scroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-      `}} />
     </section>
   );
 }

@@ -15,51 +15,20 @@ export const EMOTIONS = [
   "surprised",
 ];
 
-// Display metadata per emotion (colors follow the app design tokens)
+// Display metadata. These are camera *expression estimates*, not feelings:
+// copy must never claim to know how the child feels.
 export const EMOTION_META = {
-  happy: {
-    label: "Happy",
-    color: "#3ECFB2",
-    iconKey: "happy",
-    parentText: "Engaged and enjoying the game",
-  },
-  neutral: {
-    label: "Calm",
-    color: "#4A90D9",
-    iconKey: "neutral",
-    parentText: "Calm and focused",
-  },
-  sad: {
-    label: "Sad",
-    color: "#C4B5FD",
-    iconKey: "sad",
-    parentText: "Looking a little down — a sticker might cheer them up",
-  },
-  angry: {
-    label: "Angry",
-    color: "#FF7E6B",
-    iconKey: "alert",
-    parentText: "Showing anger — consider pausing or slowing the game",
-  },
-  stressed: {
-    label: "Stressed",
-    color: "#FFA94D",
-    iconKey: "alert",
-    parentText: "Showing signs of stress — the game is easing off",
-  },
-  frustrated: {
-    label: "Frustrated",
-    color: "#FF7E6B",
-    iconKey: "sad",
-    parentText: "Showing frustration — the game is auto-slowing to help",
-  },
-  surprised: {
-    label: "Surprised",
-    color: "#FFB020",
-    iconKey: "star",
-    parentText: "Surprised — watch how the next round goes",
-  },
+  happy: { label: "Smiling", color: "#17977F", iconKey: "happy", parentText: "Expression looked like smiling" },
+  neutral: { label: "Calm face", color: "#2B6CB0", iconKey: "neutral", parentText: "Expression looked calm or neutral" },
+  sad: { label: "Downturned", color: "#7C66D9", iconKey: "sad", parentText: "Expression looked downturned" },
+  angry: { label: "Tense brow", color: "#D9603F", iconKey: "alert", parentText: "Brow looked tense — worth checking in" },
+  stressed: { label: "Strained", color: "#D9603F", iconKey: "alert", parentText: "Expression looked strained — a break may help" },
+  frustrated: { label: "Frowning", color: "#D9603F", iconKey: "sad", parentText: "Expression looked like frowning — a break may help" },
+  surprised: { label: "Surprised", color: "#E59400", iconKey: "star", parentText: "Expression looked surprised" },
 };
+
+/** Expressions that suggest offering a break (soft signal only). */
+export const TENSE_EXPRESSIONS = ["angry", "stressed", "frustrated"];
 
 function shape(map, blendshapes) {
   const byName = new Map(
@@ -190,10 +159,11 @@ export function summarizeEmotionTimeline(timeline) {
   const counts = {};
   for (const p of timeline) counts[p.emotion] = (counts[p.emotion] || 0) + 1;
   const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+  const confs = timeline.map((p) => p.confidence).filter((c) => Number.isFinite(c));
   return {
     dominant,
-    avgConfidence: 0.7, // per-reading confidence isn't kept in the timeline
-    timeline: timeline.slice(-20),
+    avgConfidence: confs.length ? Math.round((confs.reduce((a, b) => a + b, 0) / confs.length) * 100) / 100 : 0,
+    timeline: timeline.slice(-20).map(({ t, emotion }) => ({ t, emotion })),
   };
 }
 

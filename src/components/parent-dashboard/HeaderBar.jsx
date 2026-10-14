@@ -1,58 +1,81 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import { Bell } from "lucide-react";
 import { useParentStore } from "../../stores/useParentStore";
-import { Hand, Bell, Eye } from "lucide-react";
+import { PARENT_TABS } from "./nav";
+
+const SEEN_KEY = "nb_notifications_seen_at";
+
+function readSeen() {
+  try {
+    return Number(localStorage.getItem(SEEN_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+}
 
 export default function HeaderBar() {
-  const { parent, liveSession, setActiveTab, stats } = useParentStore();
+  const { activeTab, notifications, child, lastUpdatedAt } = useParentStore();
+  const [open, setOpen] = useState(false);
+  const [seenAt, setSeenAt] = useState(0);
+  const ref = useRef(null);
+  const title = PARENT_TABS.find((t) => t.id === activeTab)?.label;
+  const unread = notifications.filter((n) => new Date(n.at).getTime() > seenAt).length;
 
-  const today = new Date();
-  const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-  const dateString = today.toLocaleDateString('en-GB', options);
+  useEffect(() => {
+    const t = setTimeout(() => setSeenAt(readSeen()), 0);
+    return () => clearTimeout(t);
+  }, []);
 
-  const greeting = today.getHours() < 12
-    ? 'Good morning'
-    : today.getHours() < 17
-      ? 'Good afternoon'
-      : 'Good evening';
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => !ref.current?.contains(e.target) && setOpen(false);
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [open]);
+
+  const toggle = () => {
+    setOpen((o) => !o);
+    const now = Date.now();
+    try {
+      localStorage.setItem(SEEN_KEY, String(now));
+    } catch {
+      // storage unavailable — badge simply won't persist
+    }
+    setSeenAt(now);
+  };
 
   return (
-    <header className="sticky top-0 z-30 bg-white/85 backdrop-blur-md border-b border-white/60 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2">
-      {/* Left */}
+    <header className="sticky top-0 z-30 bg-canvas/95 backdrop-blur-sm px-4 md:px-8 py-4 flex items-center justify-between gap-3">
       <div className="min-w-0">
-        <h1 className="font-nunito font-bold text-lg md:text-2xl text-[#1B2D3E] leading-tight flex items-center gap-1.5 truncate">
-          <span>{greeting}, {parent.name}</span>
-          <Hand size={20} className="inline-block text-[#FFB020] shrink-0" />
-        </h1>
-        <div className="font-dm-sans text-xs md:text-sm text-[#8FA3B1] truncate">
-          {dateString}
-        </div>
+        <h1 className="font-nunito font-extrabold text-2xl text-ink truncate">{title}</h1>
+        <p className="font-dm-sans text-[13px] text-muted">
+          {child.name}
+          {lastUpdatedAt && ` · updated ${new Date(lastUpdatedAt).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}`}
+        </p>
       </div>
-
-      {/* Center / Right: Live Tracking Pill if session active */}
-      {liveSession?.isLive && (
-        <button
-          onClick={() => setActiveTab("live")}
-          className="flex items-center gap-1.5 bg-[#E8FAF6] border-2 border-[#3ECFB2] px-3 py-1 rounded-full text-xs font-bold text-[#1A9E8C] shadow-sm hover:scale-105 transition-all shrink-0"
-        >
-          <span className="w-2 h-2 rounded-full bg-[#3ECFB2] animate-ping" />
-          <Eye size={14} /> <span className="hidden sm:inline">Live Observer</span>
+      <div className="relative" ref={ref}>
+        <button onClick={toggle} aria-expanded={open} aria-label={`Notifications${unread ? `, ${unread} new` : ""}`} className="relative w-11 h-11 rounded-xl bg-white ring-1 ring-line flex items-center justify-center text-ink-soft hover:text-ink">
+          <Bell size={19} />
+          {unread > 0 && <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-coral-700 text-white font-dm-sans text-[11px] font-bold flex items-center justify-center tabular">{unread}</span>}
         </button>
-      )}
-
-      {/* Right Icons */}
-      <div className="flex items-center gap-3 md:gap-6 shrink-0">
-        <button className="relative text-[#8FA3B1] hover:text-[#1B2D3E] transition-colors p-1">
-          <Bell size={20} />
-          {stats.todayCompletedCount > 0 && (
-            <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-[#FF7E6B] rounded-full text-white text-[8px] font-bold flex items-center justify-center border border-white">
-              {stats.todayCompletedCount}
-            </span>
-          )}
-        </button>
-        <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-[#4A90D9]/20 flex items-center justify-center text-[#4A90D9] font-bold text-xs md:text-sm border-2 border-[#3ECFB2] cursor-pointer">
-          {parent.avatarInitials}
-        </div>
+        {open && (
+          <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl bg-white shadow-[var(--shadow-raised)] p-2 z-40">
+            {!notifications.length ? (
+              <p className="font-dm-sans text-sm text-muted p-4 text-center">Nothing new this week.</p>
+            ) : (
+              <ul>
+                {notifications.map((n) => (
+                  <li key={n.id} className="px-3 py-2.5 rounded-xl hover:bg-canvas">
+                    <p className="font-dm-sans text-sm text-ink">{n.text}</p>
+                    <p className="font-dm-sans text-[12px] text-muted">{new Date(n.at).toLocaleString("en-IN", { weekday: "short", hour: "numeric", minute: "2-digit" })}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );

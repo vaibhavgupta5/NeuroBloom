@@ -2,41 +2,50 @@
 
 import { useEffect, useRef } from "react";
 
+const EVENTS = ["telemetry", "snapshot", "parent-action", "refresh"];
+const shared = new Map(); // url → { es, listeners:Set, refs }
+
+function subscribe(url, listener) {
+  let entry = shared.get(url);
+  if (!entry) {
+    const es = new EventSource(url);
+    entry = { es, listeners: new Set() };
+    for (const name of EVENTS) {
+      es.addEventListener(name, (e) => {
+        let data;
+        try {
+          data = JSON.parse(e.data);
+        } catch {
+          return;
+        }
+        for (const l of entry.listeners) l(name, data);
+      });
+    }
+    shared.set(url, entry);
+  }
+  entry.listeners.add(listener);
+  return () => {
+    entry.listeners.delete(listener);
+    if (entry.listeners.size === 0) {
+      entry.es.close();
+      shared.delete(url);
+    }
+  };
+}
+
 /**
- * Subscribes to the server SSE stream (/api/stream) and dispatches named
- * events to callbacks. EventSource auto-reconnects on connection drops.
- *
- * Events:
- *  - telemetry     → live game snapshot (parent dashboards; camera frame stripped)
- *  - snapshot      → single camera frame, only when it changed (~every 10s)
- *  - parent-action → sticker/speed/pause commands (child screen)
- *  - refresh       → a new Session was saved; refetch aggregates
+ * Subscribes to /api/stream. Hooks on the same page share one EventSource per role.
+ *  role "parent": telemetry, snapshot, refresh · role "child": parent-action
  */
-export function useSSE(handlers) {
+export function useSSE(handlers, role = "parent") {
   const handlersRef = useRef(handlers);
 
   useEffect(() => {
     handlersRef.current = handlers;
   });
 
-  useEffect(() => {
-    const es = new EventSource("/api/stream");
-
-    const bind = (eventName) => {
-      es.addEventListener(eventName, (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          handlersRef.current?.[eventName]?.(data);
-        } catch {
-          // malformed event — ignore
-        }
-      });
-    };
-
-    ["telemetry", "snapshot", "parent-action", "refresh"].forEach(bind);
-
-    return () => es.close();
-  }, []);
-
-  return null;
+  useEffect(
+    () => subscribe(`/api/stream?role=${role}`, (name, data) => handlersRef.current?.[name]?.(data)),
+    [role]
+  );
 }

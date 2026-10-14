@@ -1,96 +1,78 @@
 import { create } from 'zustand'
 
-const initialChild = {
-  id: null,
-  name: 'Arjun',
-  age: 6,
-  avatarIcon: 'child',
-  streak: 0,
-  stars: 0,
-  dailyGoal: 4,
-}
+const DEFAULT_SENSORY = { motion: 'reduced', sfx: true, voice: true, voiceRate: 0.9, calmPalette: false, showTimer: false, sessionMinutes: 15 }
 
 export const useChildStore = create((set, get) => ({
-  child: initialChild,
+  child: { id: null, name: '', age: null, streak: 0, stars: 0, dailyGoal: 4, sensoryProfile: DEFAULT_SENSORY, consent: { camera: false, liveFrames: false }, levels: {}, aacTiles: [] },
+  childMode: false,
   todayModules: [],
   todayCompletedCount: 0,
+  achievements: [],
   hydrated: false,
+  loadError: null,
   currentMood: null,
   activeScreen: 'home',
   activeGame: null,
 
-  // Camera emotion mirrors (source of truth = CameraEmotionContext)
-  cameraStatus: 'idle',
-  emotion: null,
-
-  // Realtime parent intervention state (applied locally via SSE parent-action events)
+  // Parent interventions (SSE) and break offers
   activeSticker: null,
   remoteSpeedMultiplier: 1.0,
   remotePaused: false,
+  breakOffer: null, // null | 'parent' | 'auto'
 
-  displaySettings: {
-    theme: 'default', // default, pastel, high-contrast, dark
-    brightness: 100, // percentage (50 to 150)
-    saturation: 100, // percentage (0 to 200)
-    soundEnabled: true, // UI click sounds
-    customBackgroundImage: null, // URL or ObjectURL
-  },
-
-  setDisplaySettings: (settings) => set((state) => ({
-    displaySettings: { ...state.displaySettings, ...settings }
-  })),
   setMood: (mood) => set({ currentMood: mood }),
-  setCameraStatus: (status) => set({ cameraStatus: status }),
-  setEmotion: (emotion) => set({ emotion }),
+  setScreen: (screen) => set({ activeScreen: screen, activeGame: null }),
+  setActiveGame: (game) => set({ activeGame: game }),
+  offerBreak: (source = 'auto') => set({ breakOffer: source }),
+  dismissBreak: () => set({ breakOffer: null }),
+  takeBreak: () => set({ breakOffer: null, activeGame: null, activeScreen: 'feel', calmRequested: true }),
+  calmRequested: false,
+  clearCalmRequest: () => set({ calmRequested: false }),
 
-  // Hydrate from GET /api/child/state (or the response of POST /api/sessions)
   hydrateChildState: (data) => set({
-    child: data.child || get().child,
+    child: { ...get().child, ...data.child, sensoryProfile: { ...DEFAULT_SENSORY, ...(data.child?.sensoryProfile || {}) } },
+    childMode: data.childMode ?? get().childMode,
     todayModules: data.todayModules ?? get().todayModules,
-    todayCompletedCount: data.todayCompletedCount ?? get().todayCompletedCount,
+    todayCompletedCount: data.todayModules ? data.todayModules.filter((m) => m.completed).length : get().todayCompletedCount,
+    achievements: data.achievements ?? get().achievements,
     currentMood: data.currentMood !== undefined ? data.currentMood : get().currentMood,
     hydrated: true,
+    loadError: null,
   }),
+  setLoadError: (loadError) => set({ loadError }),
 
-  // Optimistically mark a module complete; the caller persists via POST /api/sessions
-  // and reconciles with hydrateChildState().
+  // Optimistic completion; POST /api/sessions reconciles with hydrateChildState()
   completeModule: (moduleCode) =>
     set((state) => {
+      const done = state.todayModules.find((m) => m.moduleCode === moduleCode || m.id === moduleCode)
+      if (!done || done.completed) return {}
+      const next = state.todayModules
+        .filter((m) => !m.completed && m !== done && (m.order ?? 0) > (done.order ?? 0))
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))[0]
       const updated = state.todayModules.map((m) => {
-        if (m.moduleCode === moduleCode || m.id === moduleCode) return { ...m, completed: true }
-        // unlock next module
-        const idx = state.todayModules.findIndex(
-          (x) => x.moduleCode === moduleCode || x.id === moduleCode
-        )
-        if (state.todayModules.indexOf(m) === idx + 1) return { ...m, unlocked: true }
+        if (m === done) return { ...m, completed: true }
+        if (m === next) return { ...m, unlocked: true }
         return m
       })
-      return {
-        todayModules: updated,
-        todayCompletedCount: state.todayCompletedCount + 1,
-        activeGame: null,
-      }
+      return { todayModules: updated, todayCompletedCount: updated.filter((m) => m.completed).length }
     }),
 
-  setScreen: (screen) => set({ activeScreen: screen }),
-  setActiveGame: (game) => set({ activeGame: game }),
-
-  // Parent remote intervention action handler (fed by the SSE parent-action stream)
-  receiveParentAction: (actionPayload) => {
-    if (!actionPayload) return;
-    const { actionType, payload } = actionPayload;
-
+  receiveParentAction: (action) => {
+    if (!action) return
+    const { actionType, payload } = action
     if (actionType === 'SEND_STICKER') {
-      set({ activeSticker: payload });
+      const sticker = { ...payload, key: `${payload.id}-${get().stickerSeq + 1}` }
+      set({ activeSticker: sticker, stickerSeq: get().stickerSeq + 1 })
       setTimeout(() => {
-        if (get().activeSticker?.id === payload.id) {
-          set({ activeSticker: null });
-        }
-      }, 4000);
+        if (get().activeSticker?.key === sticker.key) set({ activeSticker: null })
+      }, 4500)
     } else if (actionType === 'SET_SPEED') {
-      set({ remoteSpeedMultiplier: payload.speed });
+      set({ remoteSpeedMultiplier: payload.speed })
     } else if (actionType === 'TOGGLE_PAUSE') {
-      set((state) => ({ remotePaused: !state.remotePaused }));
+      set({ remotePaused: typeof payload?.paused === 'boolean' ? payload.paused : !get().remotePaused })
+    } else if (actionType === 'OFFER_BREAK') {
+      set({ breakOffer: 'parent' })
     }
   },
+  stickerSeq: 0,
 }))

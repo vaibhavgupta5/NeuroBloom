@@ -10,12 +10,14 @@ import PlayScreen from "../../../components/child-dashboard/screens/PlayScreen";
 import StarsScreen from "../../../components/child-dashboard/screens/StarsScreen";
 import ScheduleScreen from "../../../components/child-dashboard/screens/ScheduleScreen";
 import FeelScreen from "../../../components/child-dashboard/screens/FeelScreen";
+import TalkScreen from "../../../components/child-dashboard/screens/TalkScreen";
 import CameraEmotionBadge from "../../../components/child-dashboard/CameraEmotionBadge";
 import { CameraEmotionProvider } from "../../../context/CameraEmotionContext";
 
 const screens = {
   home: <HomeScreen />,
   play: <PlayScreen />,
+  talk: <TalkScreen />,
   stars: <StarsScreen />,
   schedule: <ScheduleScreen />,
   feel: <FeelScreen />,
@@ -23,29 +25,30 @@ const screens = {
 
 export default function ChildDashboardPage() {
   const activeScreen = useChildStore((s) => s.activeScreen);
+  const activeGame = useChildStore((s) => s.activeGame);
+  const consent = useChildStore((s) => s.child.consent);
 
   // Server data + realtime parent interventions
   useChildState();
   useParentActionListener();
 
   return (
-    <CameraEmotionProvider>
+    <CameraEmotionProvider consent={consent}>
       <ChildLayout>
         <AnimatePresence mode="wait">
-        <motion.div
-          key={activeScreen}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
-          className="h-full relative"
-        >
-          {screens[activeScreen]}
-        </motion.div>
-      </AnimatePresence>
+          <motion.div
+            key={activeGame ? `game:${activeScreen}` : activeScreen}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="h-full relative"
+          >
+            {screens[activeScreen] || <HomeScreen />}
+          </motion.div>
+        </AnimatePresence>
 
-      {/* Camera emotion pill — permission prompt, live emotion, or auto mode */}
-      <CameraEmotionBadge />
+        <CameraEmotionBadge />
       </ChildLayout>
     </CameraEmotionProvider>
   );

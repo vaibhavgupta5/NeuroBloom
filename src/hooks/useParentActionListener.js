@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { useChildStore } from "../stores/useChildStore";
 import { useSSE } from "./useSSE";
 
@@ -12,9 +11,7 @@ import { useSSE } from "./useSSE";
 export function useParentActionListener() {
   const receiveParentAction = useChildStore((s) => s.receiveParentAction);
 
-  useSSE({
-    "parent-action": (event) => receiveParentAction(event),
-  });
+  useSSE({ "parent-action": (event) => receiveParentAction(event) }, "child");
 
   return null;
 }

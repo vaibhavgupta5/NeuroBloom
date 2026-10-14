@@ -1,87 +1,64 @@
 "use client";
 
-import { useParentStore } from "../../stores/useParentStore";
 import Link from "next/link";
-import { Home, Radio, TrendingUp, Smile, Gamepad2, ClipboardList, Stethoscope, Settings, Leaf, Flame } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeftRight, Gamepad2, Leaf, LogOut } from "lucide-react";
+import { useParentStore } from "../../stores/useParentStore";
+import { api } from "../../lib/api";
+import { PARENT_TABS } from "./nav";
+import { cn } from "../../lib/cn";
+
+export async function signOut(router) {
+  await api("/api/auth/logout", { method: "POST" }).catch(() => {});
+  router.replace("/login");
+}
 
 export default function Sidebar() {
-  const { child, parent, activeTab, setActiveTab } = useParentStore();
-
-  const navItems = [
-    { id: "overview", icon: <Home size={20} />, label: "Overview" },
-    { id: "live", icon: <Radio size={20} className="animate-pulse text-[#3ECFB2]" />, label: "Live Tracking" },
-    { id: "progress", icon: <TrendingUp size={20} />, label: "Progress" },
-    { id: "mood", icon: <Smile size={20} />, label: "Mood & Emotions" },
-    { id: "sessions", icon: <Gamepad2 size={20} />, label: "Sessions" },
-    { id: "reports", icon: <ClipboardList size={20} />, label: "Reports" },
-    { id: "notes", icon: <Stethoscope size={20} />, label: "Therapist Notes" },
-    { id: "settings", icon: <Settings size={20} />, label: "Settings" },
-  ];
+  const router = useRouter();
+  const { child, parent, activeTab, setActiveTab, liveSession } = useParentStore();
 
   return (
-    <aside className="w-60 shrink-0 h-screen sticky top-0 flex flex-col bg-white/70 backdrop-blur-xl border-r border-white/60 shadow-[4px_0_24px_rgba(62,207,178,0.08)] hidden md:flex overflow-hidden">
-      {/* Top Section */}
-      <div className="p-6">
-        <div className="flex items-center gap-2 mb-8">
-          <span className="flex items-center text-[#3ECFB2]"><Leaf size={24} /></span>
-          <h1 className="font-nunito font-bold text-[#3ECFB2] text-xl tracking-tight relative">
-            NeuroBloom
-          </h1>
-        </div>
-
-        {/* Child Selector */}
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-3 cursor-pointer p-2 rounded-xl hover:bg-white/50 transition-colors">
-            <div className="w-10 h-10 rounded-full bg-[#3ECFB2]/20 flex items-center justify-center text-[#1A9E8C] font-bold font-dm-sans shadow-sm">
-              {child.name.substring(0, 2).toUpperCase()}
-            </div>
-            <div className="flex-1">
-              <div className="font-nunito font-bold text-[#1B2D3E] text-sm leading-tight">
-                {child.name} (Age {child.age})
-              </div>
-            </div>
-            <div className="text-[#8FA3B1] text-xs">▾</div>
-          </div>
-          <div className="bg-[#3ECFB2] text-white rounded-2xl px-3 py-1.5 text-xs font-bold shadow-[0_3px_0_#1A9E8C] self-start ml-2 flex items-center gap-1.5">
-            <span className="flex items-center"><Flame size={14} /></span> {child.streak} day streak
-          </div>
-        </div>
+    <aside className="hidden md:flex w-64 shrink-0 h-dvh sticky top-0 flex-col bg-white border-r border-line">
+      <div className="p-5">
+        <Link href="/" className="inline-flex items-center gap-2 font-nunito font-extrabold text-xl text-teal-700">
+          <Leaf size={22} aria-hidden /> NeuroBloom
+        </Link>
+        <Link href="/dashboard" className="mt-6 flex items-center gap-3 rounded-xl p-2 -mx-2 hover:bg-canvas" aria-label="Switch child">
+          <span className="w-10 h-10 rounded-xl bg-mint text-teal-700 flex items-center justify-center font-nunito font-bold">{child.name?.slice(0, 1)}</span>
+          <span className="flex-1 min-w-0">
+            <span className="block font-nunito font-bold text-ink truncate">{child.name}</span>
+            <span className="block font-dm-sans text-[13px] text-muted">Age {child.age} · {child.streak}-day streak</span>
+          </span>
+          <ArrowLeftRight size={16} className="text-muted" aria-hidden />
+        </Link>
       </div>
 
-      {/* Nav Items */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-2 space-y-1 custom-scrollbar pb-4">
-        {navItems.map((item) => (
+      <nav className="flex-1 px-3 flex flex-col gap-1" aria-label="Dashboard">
+        {PARENT_TABS.map(({ id, label, icon: Icon }) => (
           <button
-            key={item.id}
-            onClick={() => setActiveTab(item.id)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mx-2 text-sm transition-all text-left ${
-              activeTab === item.id
-                ? "bg-[#3ECFB2]/15 text-[#1A9E8C] font-semibold border-r-2 border-[#3ECFB2]"
-                : "text-[#8FA3B1] hover:bg-[#E8FAF6] hover:text-[#1B2D3E]"
-            }`}
+            key={id}
+            onClick={() => setActiveTab(id)}
+            aria-current={activeTab === id ? "page" : undefined}
+            className={cn(
+              "h-11 px-3 rounded-xl flex items-center gap-3 font-dm-sans text-[15px] transition-colors",
+              activeTab === id ? "bg-mint text-teal-800 font-bold" : "text-ink-soft hover:bg-canvas hover:text-ink"
+            )}
           >
-            <span className="text-lg">{item.icon}</span>
-            <span className="font-dm-sans">{item.label}</span>
+            <Icon size={19} aria-hidden />
+            {label}
+            {id === "live" && liveSession.isLive && <span className="ml-auto w-2 h-2 rounded-full bg-teal-600" aria-label="Live now" />}
           </button>
         ))}
       </nav>
 
-      {/* Bottom Section */}
-      <div className="p-6 border-t border-white/60">
-        <Link href="/dashboard/child" className="font-dm-sans text-sm text-[#1B2D3E] font-bold hover:text-[#3ECFB2] hover:bg-white/80 transition-colors mb-4 block bg-white/50 p-2.5 rounded-xl text-center border border-white/60 shadow-sm flex items-center justify-center gap-2">
-          <span><Gamepad2 size={16} /></span> Child Dashboard
+      <div className="p-4 border-t border-line flex flex-col gap-2">
+        <Link href="/dashboard" className="h-11 px-3 rounded-xl flex items-center gap-3 font-dm-sans text-[15px] font-bold text-teal-700 hover:bg-mint">
+          <Gamepad2 size={19} aria-hidden /> Hand to {child.name}
         </Link>
-        <a href="#" className="font-dm-sans text-xs text-[#8FA3B1] hover:text-[#3ECFB2] transition-colors mb-4 block">
-          Need help? &rarr;
-        </a>
-        <div className="flex items-center gap-3 cursor-pointer">
-          <div className="w-8 h-8 rounded-full bg-[#4A90D9]/20 flex items-center justify-center text-[#4A90D9] font-bold text-xs">
-            {parent.avatarInitials}
-          </div>
-          <div>
-            <div className="font-nunito font-bold text-[#1B2D3E] text-sm">{parent.name}</div>
-            <div className="font-dm-sans text-[#8FA3B1] text-xs hover:text-[#FF7E6B] transition-colors">Log out</div>
-          </div>
+        <div className="flex items-center gap-3 px-3 py-2">
+          <span className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center font-dm-sans text-xs font-bold">{parent.avatarInitials}</span>
+          <span className="flex-1 font-dm-sans text-sm font-bold text-ink truncate">{parent.name}</span>
+          <button onClick={() => signOut(router)} className="p-2 rounded-lg text-muted hover:text-ink hover:bg-canvas" aria-label="Sign out"><LogOut size={17} /></button>
         </div>
       </div>
     </aside>

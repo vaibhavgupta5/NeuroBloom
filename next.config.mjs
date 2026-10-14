@@ -6,7 +6,7 @@ const withPWA = withPWAInit({
   aggressiveFrontEndNavCaching: true,
   reloadOnOnline: true,
   swcMinify: true,
-  disable: false, // PWA active in both development and production
+  disable: process.env.NODE_ENV === "development",
   workboxOptions: {
     disableDevLogs: true,
     // Never cache API traffic — SSE streams and fresh dashboard data must hit the server

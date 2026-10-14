@@ -6,14 +6,15 @@ import Features from '../components/landing/Features';
 import AISection from '../components/landing/AISection';
 import AudienceToggle from '../components/landing/AudienceToggle';
 import Research from '../components/landing/Research';
-import Testimonials from '../components/landing/Testimonials';
 import Pricing from '../components/landing/Pricing';
 import CTABanner from '../components/landing/CTABanner';
 import Footer from '../components/landing/Footer';
+import SmoothScroll from '../components/SmoothScroll';
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#E8FAF6] text-[#1B2D3E] font-dm-sans selection:bg-[#3ECFB2] selection:text-white">
+    <SmoothScroll>
+    <main className="min-h-screen bg-mint text-ink font-dm-sans">
       <Navbar />
       <Hero />
       <ProblemSection />
@@ -22,10 +23,10 @@ export default function Home() {
       <AISection />
       <AudienceToggle />
       <Research />
-      <Testimonials />
       <Pricing />
       <CTABanner />
       <Footer />
     </main>
+    </SmoothScroll>
   );
 }

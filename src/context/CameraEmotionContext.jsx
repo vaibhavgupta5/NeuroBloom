@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo } from "react";
 import { useFaceEmotion } from "../hooks/useFaceEmotion";
 import { computeDifficultyAdjust } from "../lib/emotionUtils";
 
@@ -13,8 +13,19 @@ import { computeDifficultyAdjust } from "../lib/emotionUtils";
  */
 const CameraEmotionContext = createContext(null);
 
-export function CameraEmotionProvider({ children }) {
-  const face = useFaceEmotion();
+export function CameraEmotionProvider({ children, consent }) {
+  const allowed = Boolean(consent?.camera);
+  const face = useFaceEmotion({ captureFrames: allowed && Boolean(consent?.liveFrames) });
+  const { requestCamera: rawRequest, stopCamera } = face;
+
+  // The camera never starts without a parent's consent on the child profile
+  const requestCamera = useCallback(() => {
+    if (allowed) rawRequest();
+  }, [allowed, rawRequest]);
+
+  useEffect(() => {
+    if (!allowed) stopCamera();
+  }, [allowed, stopCamera]);
 
   const difficulty = useMemo(
     () => computeDifficultyAdjust(face.emotion, null),
@@ -22,8 +33,8 @@ export function CameraEmotionProvider({ children }) {
   );
 
   const value = useMemo(
-    () => ({ ...face, difficulty }),
-    [face, difficulty]
+    () => ({ ...face, requestCamera, allowed, difficulty }),
+    [face, requestCamera, allowed, difficulty]
   );
 
   return (
@@ -43,6 +54,9 @@ export function useCameraEmotion() {
       emotion: null,
       emotionConfidence: 0,
       snapshot: null,
+      scores: null,
+      faceVisible: false,
+      allowed: false,
       difficulty: { speedMultiplier: 1, hintLevel: 0 },
       requestCamera: () => {},
       stopCamera: () => {},

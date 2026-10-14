@@ -19,8 +19,7 @@ export default function Navbar() {
 
   const navLinks = [
     { name: "How It Works", href: "#how-it-works" },
-    { name: "For Parents", href: "#parents" },
-    { name: "For Therapists", href: "#therapists" },
+    { name: "Who It's For", href: "#audience" },
     { name: "Research", href: "#research" },
     { name: "Pricing", href: "#pricing" },
   ];
@@ -37,7 +36,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
-            <span className="font-nunito font-bold text-2xl text-[#3ECFB2] flex items-center gap-2">
+            <span className="font-nunito font-bold text-2xl text-teal-700 flex items-center gap-2">
               <Leaf size={28} /> NeuroBloom
             </span>
           </div>
@@ -48,21 +47,21 @@ export default function Navbar() {
               <a
                 key={link.name}
                 href={link.href}
-                className="group relative font-dm-sans text-[#1B2D3E] hover:text-[#3ECFB2] font-medium transition-colors"
+                className="group relative font-dm-sans text-ink hover:text-teal-700 font-medium transition-colors"
               >
                 {link.name}
-                <span className="absolute left-0 bottom-[-4px] w-0 h-[2px] bg-[#3ECFB2] transition-all duration-300 group-hover:w-full"></span>
+                <span className="absolute left-0 bottom-[-4px] w-0 h-[2px] bg-teal-700 transition-all duration-300 group-hover:w-full"></span>
               </a>
             ))}
           </div>
 
           {/* Desktop CTAs */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link href="/dashboard">
+            <Link href="/login">
               <button className="ghost-btn py-2 px-4 text-sm">Log In</button>
             </Link>
-            <Link href="/dashboard">
-              <button className="clay-btn-primary py-2 px-4 text-sm">Start Free Trial</button>
+            <Link href="/signup">
+              <button className="clay-btn-primary py-2 px-4 text-sm">Get Started Free</button>
             </Link>
           </div>
 
@@ -70,7 +69,7 @@ export default function Navbar() {
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-[#1B2D3E] hover:text-[#3ECFB2] focus:outline-none"
+              className="text-ink hover:text-teal-700 focus:outline-none"
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 {isMobileMenuOpen ? (
@@ -98,18 +97,18 @@ export default function Navbar() {
                 <a
                   key={link.name}
                   href={link.href}
-                  className="block px-3 py-2 rounded-md font-dm-sans text-base font-medium text-[#1B2D3E] hover:bg-[#E8FAF6] hover:text-[#3ECFB2]"
+                  className="block px-3 py-2 rounded-md font-dm-sans text-base font-medium text-ink hover:bg-mint hover:text-teal-700"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {link.name}
                 </a>
               ))}
               <div className="pt-4 flex flex-col space-y-3 px-3">
-                <Link href="/dashboard">
+                <Link href="/login">
                   <button className="ghost-btn w-full">Log In</button>
                 </Link>
-                <Link href="/dashboard">
-                  <button className="clay-btn-primary w-full">Start Free Trial</button>
+                <Link href="/signup">
+                  <button className="clay-btn-primary w-full">Get Started Free</button>
                 </Link>
               </div>
             </div>

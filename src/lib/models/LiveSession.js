@@ -12,9 +12,10 @@ const LiveSessionSchema = new mongoose.Schema(
     elapsedSeconds: { type: Number, default: 0 },
     focusScore: { type: Number, default: 0 },
     focusStatus: { type: String, default: null },
-    trackingSmoothness: { type: String, default: null },
     avgResponseMs: { type: Number, default: 0 },
-    frustrationLevel: { type: String, default: null },
+    accuracy: { type: Number, default: null },
+    promptLevel: { type: Number, default: 0 },
+    level: { type: Number, default: 1 },
     liveCoordinates: { x: { type: Number, default: 50 }, y: { type: Number, default: 50 } },
     speedMultiplier: { type: Number, default: 1.0 },
     // Camera emotion (MediaPipe blendshapes → mapped emotion)

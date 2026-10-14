@@ -1,74 +1,102 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { fadeUp, staggerContainer } from "../../../lib/animations";
-import { Gamepad2, Type, Puzzle, Star } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, Check } from "lucide-react";
+import { useChildStore } from "../../../stores/useChildStore";
+import { useSpeak } from "../../../hooks/useSpeak";
+import { useSoundEffect } from "../../../hooks/useSoundEffect";
+import { IconFor } from "../../../lib/icons";
+import { api } from "../../../lib/api";
+import { cn } from "../../../lib/cn";
+
+function FirstThen({ first, then }) {
+  if (!first) return null;
+  return (
+    <section aria-label="First, then" className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-3">
+      {[["First", first], null, ["Then", then]].map((slot, i) =>
+        slot === null ? (
+          <ArrowRight key={i} size={36} className="self-center text-muted" aria-hidden />
+        ) : (
+          <div key={slot[0]} className={cn("rounded-3xl p-4 flex flex-col items-center gap-2 text-center", i === 0 ? "bg-white ring-4 ring-teal-400" : "bg-white/70 ring-1 ring-line")}>
+            <span className="font-nunito font-extrabold text-lg uppercase tracking-wide text-muted">{slot[0]}</span>
+            {slot[1] ? (
+              <>
+                <IconFor name={slot[1].iconKey} size={64} strokeWidth={1.75} className={i === 0 ? "text-teal-700" : "text-ink-soft"} />
+                <span className="font-nunito font-extrabold text-2xl text-ink">{slot[1].label}</span>
+              </>
+            ) : (
+              <span className="font-nunito font-bold text-xl text-ink-soft my-auto">All done!</span>
+            )}
+          </div>
+        )
+      )}
+    </section>
+  );
+}
 
 export default function ScheduleScreen() {
-  const schedule = [
-    { status: "NOW", badgeBg: "bg-[#3ECFB2]", textStyle: "text-white", boxStyle: "bg-white border-l-4 border-[#3ECFB2] shadow-md scale-[1.02]", icon: (s) => <Gamepad2 size={s} className="text-[#4A90D9]" />, name: "Feelings Game" },
-    { status: "AFTER", badgeBg: "bg-[#8FA3B1]/20", textStyle: "text-[#8FA3B1]", boxStyle: "bg-white/40 border border-white/60 opacity-80", icon: (s) => <Type size={s} className="text-[#FF7E6B]" />, name: "Word Match" },
-    { status: "THEN", badgeBg: "bg-[#8FA3B1]/20", textStyle: "text-[#8FA3B1]", boxStyle: "bg-white/40 border border-white/60 opacity-80", icon: (s) => <Puzzle size={s} className="text-[#C4B5FD]" />, name: "Puzzle Time" },
-    { status: "🌟", badgeBg: "bg-[#C4B5FD]", textStyle: "text-white", boxStyle: "bg-[#C4B5FD]/20 border border-[#C4B5FD] opacity-80", icon: (s) => <Star size={s} className="text-[#FFB020]" />, name: "All finished!" },
-  ];
+  const todayModules = useChildStore((s) => s.todayModules);
+  const { speak } = useSpeak();
+  const sound = useSoundEffect();
+  const [routines, setRoutines] = useState(null);
+  const [selected, setSelected] = useState(0);
+
+  useEffect(() => {
+    api("/api/routines").then((d) => setRoutines(d.routines), () => setRoutines([]));
+  }, []);
+
+  // With no authored routine, today's games are the schedule
+  const fallback = {
+    id: "games",
+    name: "Games",
+    steps: todayModules.map((m) => ({ id: m.id, label: m.shortTitle, iconKey: "gamepad", done: m.completed })),
+  };
+  const list = routines?.length ? routines : routines ? [fallback] : [];
+  const routine = list[Math.min(selected, list.length - 1)];
+  const remaining = routine?.steps.filter((s) => !s.done) || [];
+
+  const toggle = async (step) => {
+    if (routine.id === "games") return;
+    sound(step.done ? "tap" : "success");
+    if (!step.done) speak(`${step.label}, done!`);
+    const { routine: updated } = await api(`/api/routines/${routine.id}/progress`, { method: "POST", body: { stepId: step.id, done: !step.done } });
+    setRoutines((rs) => rs.map((r) => (r.id === updated.id ? updated : r)));
+  };
+
+  if (!routines) return <div className="w-full max-w-3xl mx-auto px-4" aria-busy="true" />;
 
   return (
-    <div className="flex flex-col max-w-5xl mx-auto pb-12 h-full">
-      <h1 className="font-nunito font-bold text-[24px] md:text-[32px] text-[#1B2D3E] pt-6 px-4 md:px-8 mb-6 text-center md:text-left">
-        What&apos;s happening today 📅
-      </h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 px-4 md:px-8 w-full">
-        {/* Timeline (Left on Desktop) */}
-        <motion.div 
-          className="space-y-4"
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-        >
-          {schedule.map((item, index) => (
-            <motion.div 
-              key={index}
-              variants={fadeUp}
-              className={`rounded-2xl p-4 md:p-5 flex items-center gap-4 min-h-[80px] md:min-h-[100px] ${item.boxStyle} transition-transform hover:scale-[1.02] cursor-default`}
-            >
-              <div className={`text-[11px] md:text-[13px] font-bold px-2.5 py-1.5 rounded-lg w-[60px] md:w-[70px] text-center ${item.badgeBg} ${item.textStyle}`}>
-              {item.status}
-              {item.status === "NOW" && " →"}
-            </div>
-            
-              <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-black/5 flex items-center justify-center text-2xl md:text-3xl shrink-0">
-                {item.icon(32)}
-              </div>
-              
-              <div className="font-nunito font-bold text-[16px] md:text-[20px] text-[#1B2D3E]">
-                {item.name}
-              </div>
-            </motion.div>
+    <div className="w-full max-w-3xl mx-auto px-4 flex flex-col gap-6">
+      <h1 className="font-nunito font-extrabold text-4xl text-ink">My day</h1>
+      {list.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto" role="tablist">
+          {list.map((r, i) => (
+            <button key={r.id} role="tab" aria-selected={i === selected} onClick={() => { setSelected(i); speak(r.name); }}
+              className={cn("h-12 px-5 rounded-2xl font-nunito font-bold text-lg shrink-0", i === selected ? "bg-ink text-white" : "bg-white text-ink ring-1 ring-line")}>
+              {r.name}
+            </button>
           ))}
-        </motion.div>
-
-        {/* First-Then Board (Right on Desktop) */}
-        <div>
-          <h2 className="font-nunito font-bold text-[18px] md:text-[24px] text-[#1B2D3E] mb-4 text-center md:text-left">
-            First → Then 👆
-          </h2>
-          
-          <div className="grid grid-cols-2 gap-4 h-[200px] md:h-[400px]">
-            <div className="rounded-3xl p-6 flex flex-col items-center gap-4 bg-[#3ECFB2]/20 border-2 border-[#3ECFB2] shadow-sm justify-center group hover:bg-[#3ECFB2]/30 transition-colors">
-              <span className="text-[12px] md:text-[14px] font-bold text-[#1A9E8C] tracking-wider bg-white/50 px-3 py-1 rounded-full">FIRST</span>
-              <div className="my-2 group-hover:scale-110 transition-transform flex items-center justify-center w-[80px] h-[80px]">{schedule[0].icon(80)}</div>
-              <span className="font-dm-sans font-bold text-[14px] md:text-[18px] text-[#1B2D3E] text-center">{schedule[0].name}</span>
-            </div>
-            
-            <div className="rounded-3xl p-6 flex flex-col items-center gap-4 bg-[#FFF4E3] border-2 border-[#FFA94D] shadow-sm justify-center group hover:bg-[#FFE8C2] transition-colors">
-              <span className="text-[12px] md:text-[14px] font-bold text-[#D97A1F] tracking-wider bg-white/50 px-3 py-1 rounded-full">THEN</span>
-              <div className="my-2 group-hover:scale-110 transition-transform flex items-center justify-center w-[80px] h-[80px]">{schedule[1].icon(80)}</div>
-              <span className="font-dm-sans font-bold text-[14px] md:text-[18px] text-[#1B2D3E] text-center">{schedule[1].name}</span>
-            </div>
-          </div>
         </div>
-      </div>
+      )}
+      <FirstThen first={remaining[0]} then={remaining[1]} />
+      <ol className="flex flex-col gap-3">
+        {routine?.steps.map((s) => (
+          <li key={s.id}>
+            <button
+              onClick={() => toggle(s)}
+              aria-pressed={s.done}
+              className={cn("w-full min-h-20 rounded-3xl px-5 py-3 flex items-center gap-4 text-left", s.done ? "bg-teal-50" : s.id === remaining[0]?.id ? "bg-white ring-2 ring-teal-400" : "bg-white ring-1 ring-line")}
+            >
+              <IconFor name={s.iconKey} size={40} strokeWidth={1.75} className={s.done ? "text-teal-700" : "text-ink"} />
+              <span className={cn("flex-1 font-nunito font-bold text-2xl", s.done ? "text-ink-soft line-through decoration-2" : "text-ink")}>{s.label}</span>
+              {s.durationMin && <span className="font-dm-sans text-base text-muted tabular">{s.durationMin} min</span>}
+              <span className={cn("w-10 h-10 rounded-xl flex items-center justify-center", s.done ? "bg-teal-700 text-white" : "ring-2 ring-line")}>
+                {s.done && <Check size={24} aria-hidden />}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }

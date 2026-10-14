@@ -1,29 +1,25 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useChildStore } from "../stores/useChildStore";
 
-/**
- * Fetches the child's world from GET /api/child/state and hydrates the store.
- * Mount once in the child dashboard page.
- */
+/** Loads GET /api/child/state into the child store; returns a reload function. */
 export function useChildState() {
   const hydrateChildState = useChildStore((s) => s.hydrateChildState);
+  const setLoadError = useChildStore((s) => s.setLoadError);
+
+  const load = useCallback(
+    () =>
+      fetch("/api/child/state")
+        .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+        .then(hydrateChildState)
+        .catch((err) => setLoadError(err.message)),
+    [hydrateChildState, setLoadError]
+  );
 
   useEffect(() => {
-    let cancelled = false;
+    load();
+  }, [load]);
 
-    fetch("/api/child/state")
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
-      .then((data) => {
-        if (!cancelled) hydrateChildState(data);
-      })
-      .catch((err) => console.error("Failed to load child state:", err.message));
-
-    return () => {
-      cancelled = true;
-    };
-  }, [hydrateChildState]);
-
-  return null;
+  return load;
 }

@@ -13,7 +13,7 @@ export default function CTABanner() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
-          className="relative bg-gradient-to-br from-[#3ECFB2] to-[#4A90D9] rounded-[40px] p-12 md:p-20 text-center overflow-hidden shadow-2xl border-4 border-[#E8FAF6]"
+          className="relative bg-gradient-to-br from-teal-400 to-blue-400 rounded-[40px] p-12 md:p-20 text-center overflow-hidden shadow-2xl border-4 border-mint"
         >
           {/* Background Blobs */}
           <div className="absolute top-[-20%] left-[-10%] w-64 h-64 bg-white/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -26,15 +26,15 @@ export default function CTABanner() {
             </motion.h2>
             
             <motion.p variants={fadeUp} className="font-dm-sans text-lg text-white/80 mb-10 max-w-xl mx-auto leading-relaxed">
-              Join 500+ families already using NeuroBloom to support their children&apos;s journey.
+              Free while NeuroBloom is in pilot. Set up your child&apos;s profile in about five minutes.
             </motion.p>
-            
-            <Link href="/dashboard">
+
+            <Link href="/signup">
               <motion.button 
                 variants={fadeUp}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="bg-white text-[#1A9E8C] font-bold text-lg rounded-2xl px-8 py-4 shadow-[0_6px_0_rgba(255,255,255,0.4)] active:shadow-none active:translate-y-1.5 transition-all duration-150 flex items-center gap-2"
+                className="bg-white text-teal-700 font-bold text-lg rounded-2xl px-8 py-4 shadow-[0_6px_0_rgba(255,255,255,0.4)] active:shadow-none active:translate-y-1.5 transition-all duration-150 flex items-center gap-2"
               >
                 Create Free Account <span>→</span>
               </motion.button>

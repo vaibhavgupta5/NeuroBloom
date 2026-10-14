@@ -1,123 +1,111 @@
-import { getConnection } from "@/lib/db";
-import Child from "@/lib/models/Child";
 import LiveSession from "@/lib/models/LiveSession";
 import ParentAction from "@/lib/models/ParentAction";
 import Session from "@/lib/models/Session";
+import { authErrorResponse, requireCaregiver, requireChild } from "@/lib/auth";
+import { effectiveLiveStatus } from "@/lib/live";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// Server-Sent Events stream. Both dashboards subscribe to this single endpoint:
-//  - parent listens for `telemetry` (live game updates, WITHOUT the camera
-//    frame to keep events light), `snapshot` (camera frame, only when it
-//    changed — every ~10s), and `refresh` (new session saved)
-//  - child listens for `parent-action` (stickers, speed, pause)
-// The loop polls Mongo once per second — fine for the single-family demo scale.
-export async function GET(request) {
-  await getConnection();
+const PENDING_ACTION_WINDOW_MS = 60_000;
 
-  const child = await Child.findOne().lean();
-  if (!child) {
-    return Response.json({ error: "No child found. Run: npm run seed" }, { status: 404 });
+// Server-Sent Events, one connection per page:
+//  ?role=child  → `parent-action` (stickers, speed, pause)
+//  ?role=parent → `telemetry`, `snapshot` (camera frame, consent-gated), `refresh` (new session)
+// Polls Mongo once per second; fine at demo scale on a long-lived Node server.
+export async function GET(request) {
+  const role = new URL(request.url).searchParams.get("role") === "child" ? "child" : "parent";
+  let child;
+  try {
+    ({ child } = role === "child" ? await requireChild() : await requireCaregiver());
+  } catch (err) {
+    return authErrorResponse(err);
   }
+  const childId = child._id;
+  const framesAllowed = Boolean(child.consent?.camera && child.consent?.liveFrames);
 
   const encoder = new TextEncoder();
   let closed = false;
+  let interval = null;
 
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (event, data) => {
+      const write = (chunk) => {
         if (closed) return;
         try {
-          controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+          controller.enqueue(encoder.encode(chunk));
         } catch {
           closed = true;
         }
       };
+      const send = (event, data) => write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 
-      const ping = () => {
-        if (closed) return;
-        try {
-          controller.enqueue(encoder.encode(`: ping\n\n`));
-        } catch {
-          closed = true;
-        }
-      };
-
-      // Initial snapshot so subscribers paint immediately (telemetry without
-      // the heavy frame; frame goes out as its own event right after)
-      const initialLive = await LiveSession.findOne({ childId: child._id }).lean();
-      const { snapshotFrame: initialSnapshot, ...initialRest } = initialLive || {};
-      send("telemetry", { ...initialRest, childName: child.name });
-      if (initialSnapshot) send("snapshot", { snapshotFrame: initialSnapshot });
-
-      let lastUpdatedAt = initialLive ? new Date(initialLive.updatedAt).getTime() : 0;
-      let lastSnapshotFrame = initialSnapshot || null;
+      let lastSentKey = null;
+      let lastSnapshotFrame = null;
       let lastSessionAt = 0;
       let lastActionId = null;
 
-      // Skip actions created before this connection opened
-      const preExisting = await ParentAction.findOne({ childId: child._id })
-        .sort({ createdAt: -1 })
-        .lean();
-      if (preExisting) lastActionId = String(preExisting._id);
+      const pushTelemetry = (live) => {
+        const status = effectiveLiveStatus(live);
+        const key = live ? `${new Date(live.updatedAt).getTime()}:${status}` : "none";
+        if (key === lastSentKey) return;
+        lastSentKey = key;
+        const { snapshotFrame, ...rest } = live || {};
+        send("telemetry", { ...rest, status, childName: child.name });
+        if (framesAllowed && status !== "idle" && snapshotFrame && snapshotFrame !== lastSnapshotFrame) {
+          lastSnapshotFrame = snapshotFrame;
+          send("snapshot", { snapshotFrame });
+        }
+      };
+
+      if (role === "parent") {
+        pushTelemetry(await LiveSession.findOne({ childId }).lean());
+        const latest = await Session.findOne({ childId }).sort({ createdAt: -1 }).select("createdAt").lean();
+        if (latest) lastSessionAt = new Date(latest.createdAt).getTime();
+      } else {
+        const live = await LiveSession.findOne({ childId }).lean();
+        send("parent-action", { actionType: "TOGGLE_PAUSE", payload: { paused: live?.status === "paused" } });
+      }
 
       const tick = async () => {
         if (closed) return;
-
         try {
-          // 1) Live telemetry changes (frame stripped — sent as its own event)
-          const live = await LiveSession.findOne({ childId: child._id }).lean();
-          if (live) {
-            const { snapshotFrame, ...rest } = live;
-            const ts = new Date(live.updatedAt).getTime();
-            if (ts !== lastUpdatedAt) {
-              lastUpdatedAt = ts;
-              send("telemetry", { ...rest, childName: child.name });
+          if (role === "parent") {
+            pushTelemetry(await LiveSession.findOne({ childId }).lean());
+            const latest = await Session.findOne({ childId }).sort({ createdAt: -1 }).select("createdAt").lean();
+            if (latest) {
+              const ts = new Date(latest.createdAt).getTime();
+              if (ts !== lastSessionAt) {
+                lastSessionAt = ts;
+                send("refresh", { sessionId: String(latest._id) });
+              }
             }
-            // Camera frame: pushed only when it actually changed (~every 10s)
-            if (snapshotFrame && snapshotFrame !== lastSnapshotFrame) {
-              lastSnapshotFrame = snapshotFrame;
-              send("snapshot", { snapshotFrame });
-            }
+            return;
           }
 
-          // 2) New parent actions → delivered to the child, then marked consumed
-          const query = { childId: child._id };
-          if (lastActionId) query._id = { $gt: lastActionId };
-          const actions = await ParentAction.find(query).sort({ createdAt: 1 }).limit(20).lean();
+          // Child: unconsumed actions from the last minute (covers brief disconnects)
+          const query = lastActionId
+            ? { childId, _id: { $gt: lastActionId } }
+            : { childId, consumedAt: null, createdAt: { $gte: new Date(Date.now() - PENDING_ACTION_WINDOW_MS) } };
+          const actions = await ParentAction.find(query).sort({ _id: 1 }).limit(20).lean();
           for (const action of actions) {
-            lastActionId = String(action._id);
-            send("parent-action", {
-              actionType: action.actionType,
-              payload: action.payload,
-            });
-            await ParentAction.updateOne({ _id: action._id }, { consumedAt: new Date() });
+            lastActionId = action._id;
+            send("parent-action", { actionType: action.actionType, payload: action.payload });
           }
-
-          // 3) New sessions → tells the parent dashboard to refetch aggregates
-          const latestSession = await Session.findOne({ childId: child._id })
-            .sort({ createdAt: -1 })
-            .lean();
-          if (latestSession) {
-            const ts = new Date(latestSession.createdAt).getTime();
-            if (ts !== lastSessionAt) {
-              if (lastSessionAt !== 0) send("refresh", { sessionId: String(latestSession._id) });
-              lastSessionAt = ts;
-            }
+          if (actions.length) {
+            await ParentAction.updateMany({ _id: { $in: actions.map((a) => a._id) } }, { consumedAt: new Date() });
           }
         } catch (err) {
           console.error("SSE tick error:", err.message);
         }
       };
 
-      const interval = setInterval(() => {
-        if (closed) return;
+      interval = setInterval(() => {
         tick();
-        ping();
+        write(`: ping\n\n`);
       }, 1000);
 
-      const cleanup = () => {
+      request.signal.addEventListener("abort", () => {
         if (closed) return;
         closed = true;
         clearInterval(interval);
@@ -126,13 +114,12 @@ export async function GET(request) {
         } catch {
           // already closed
         }
-      };
-
-      request.signal.addEventListener("abort", cleanup);
+      });
     },
 
     cancel() {
       closed = true;
+      clearInterval(interval);
     },
   });
 

@@ -3,15 +3,15 @@
 import { motion } from "framer-motion";
 import { staggerContainer, fadeUp } from "../../lib/animations";
 import Link from "next/link";
-import { Star, User, Puzzle, Brain, Target, Trophy, MessageCircle } from "lucide-react";
+import { Star, User, Puzzle, Brain, Target, Trophy, MessageCircle, Play } from "lucide-react";
 
 export default function Hero() {
   return (
-    <section className="relative min-h-screen pt-24 pb-20 overflow-hidden flex items-center bg-[#E8FAF6]">
+    <section className="relative min-h-screen pt-24 pb-20 overflow-hidden flex items-center bg-mint">
       {/* Background Blobs & Decorative Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-[#3ECFB2]/15 blob-bg blur-3xl z-0 pointer-events-none" />
+      <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-teal-400/15 blob-bg blur-3xl z-0 pointer-events-none" />
       <div
-        className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-[#4A90D9]/15 blob-bg blur-3xl z-0 pointer-events-none"
+        className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-blue-400/15 blob-bg blur-3xl z-0 pointer-events-none"
         style={{ animationDirection: "reverse", animationDuration: "25s" }}
       />
 
@@ -22,14 +22,14 @@ export default function Hero() {
       <motion.div 
         animate={{ opacity: [0.3, 0.8, 0.3], scale: [1, 1.2, 1] }} 
         transition={{ repeat: Infinity, duration: 4 }}
-        className="absolute top-[20%] right-[45%] text-[#FFB020] text-3xl z-0"
+        className="absolute top-[20%] right-[45%] text-amber-400 text-3xl z-0"
       >
         ✦
       </motion.div>
       <motion.div 
         animate={{ opacity: [0.2, 0.6, 0.2], scale: [1, 1.1, 1] }} 
         transition={{ repeat: Infinity, duration: 3, delay: 1 }}
-        className="absolute bottom-[30%] left-[45%] text-[#4A90D9] text-2xl z-0"
+        className="absolute bottom-[30%] left-[45%] text-blue-700 text-2xl z-0"
       >
         ✦
       </motion.div>
@@ -38,12 +38,12 @@ export default function Hero() {
       <motion.div 
         animate={{ y: [-15, 15, -15], rotate: [0, 90, 0] }}
         transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
-        className="absolute top-[15%] left-[5%] w-16 h-16 border-4 border-[#3ECFB2]/20 rounded-full z-0"
+        className="absolute top-[15%] left-[5%] w-16 h-16 border-4 border-teal-400/20 rounded-full z-0"
       />
       <motion.div 
         animate={{ y: [20, -20, 20], rotate: [0, -90, 0] }}
         transition={{ repeat: Infinity, duration: 10, ease: "easeInOut" }}
-        className="absolute bottom-[10%] right-[5%] w-24 h-24 border-4 border-[#C4B5FD]/30 rounded-full z-0"
+        className="absolute bottom-[10%] right-[5%] w-24 h-24 border-4 border-lavender-300/30 rounded-full z-0"
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
@@ -57,12 +57,12 @@ export default function Hero() {
           {/* Left Content */}
           <div className="w-full md:w-[55%] flex flex-col items-start text-left relative z-20">
             <motion.div variants={fadeUp} className="relative">
-              <h1 className="font-nunito font-extrabold text-5xl md:text-[64px] leading-[1.05] text-[#1B2D3E] mb-6 tracking-tight">
+              <h1 className="font-nunito font-extrabold text-5xl md:text-[64px] leading-[1.05] text-ink mb-6 tracking-tight">
                 Where Every Child&apos;s Brain Gets to{" "}
-                <span className="relative inline-block text-[#3ECFB2]">
+                <span className="relative inline-block text-teal-700">
                   Bloom
                   <svg
-                    className="absolute -bottom-2 left-0 w-full h-3 text-[#FF7E6B]"
+                    className="absolute -bottom-2 left-0 w-full h-3 text-coral-700"
                     viewBox="0 0 100 10"
                     preserveAspectRatio="none"
                   >
@@ -79,9 +79,9 @@ export default function Hero() {
             </motion.div>
 
             <motion.div variants={fadeUp}>
-              <p className="font-dm-sans text-lg md:text-xl text-[#8FA3B1] mb-10 max-w-lg leading-relaxed font-medium">
-                Ditch the clinical feeling. Our game-based therapy feels like
-                playtime, but works like a world-class behavioral specialist.
+              <p className="font-dm-sans text-lg md:text-xl text-muted mb-10 max-w-lg leading-relaxed font-medium">
+                Short, calm games and a Talk board for autistic children — built on evidence-based
+                practices, with real progress your family and therapist both see.
               </p>
             </motion.div>
 
@@ -89,33 +89,27 @@ export default function Hero() {
               variants={fadeUp}
               className="flex flex-col sm:flex-row flex-wrap gap-4 mb-10 w-full sm:w-auto"
             >
-              <Link href="/dashboard" className="w-full sm:w-auto">
+              <Link href="/signup" className="w-full sm:w-auto">
                 <button className="clay-btn-primary text-lg px-8 py-4 w-full text-center">
-                  Start Free Trial
+                  Get Started Free
                 </button>
               </Link>
-              <button className="ghost-btn text-lg flex items-center justify-center gap-2 px-8 py-4 w-full sm:w-auto bg-white/50 backdrop-blur-sm border-white">
-                <span className="bg-[#3ECFB2] text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
-                  ▶
-                </span>
-                Watch Demo
-              </button>
+              <Link href="/login" className="w-full sm:w-auto">
+                <button className="ghost-btn text-lg flex items-center justify-center gap-2 px-8 py-4 w-full bg-white/50 backdrop-blur-sm border-white">
+                  <span className="bg-teal-700 text-white rounded-full w-6 h-6 flex items-center justify-center">
+                    <Play size={12} fill="currentColor" />
+                  </span>
+                  Try the Demo
+                </button>
+              </Link>
             </motion.div>
 
             <motion.div
               variants={fadeUp}
-              className="flex flex-wrap items-center gap-x-8 gap-y-3 text-sm font-dm-sans text-[#1B2D3E] font-bold"
+              className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm font-dm-sans text-ink font-bold"
             >
-              <span className="flex items-center gap-2">
-                <div className="flex -space-x-2">
-                  <div className="w-6 h-6 rounded-full bg-[#4A90D9] border-2 border-[#E8FAF6]"></div>
-                  <div className="w-6 h-6 rounded-full bg-[#FF7E6B] border-2 border-[#E8FAF6]"></div>
-                  <div className="w-6 h-6 rounded-full bg-[#C4B5FD] border-2 border-[#E8FAF6]"></div>
-                </div>
-                500+ Families
-              </span>
-              <span className="flex items-center gap-2">
-                <span className="text-[#FFB020] flex items-center"><Star size={20} fill="currentColor" /></span> 4.9/5 Rating
+              <span className="flex items-center gap-2 bg-white/60 border border-white rounded-full px-4 py-2">
+                <Star size={16} className="text-amber-400" fill="currentColor" /> Free during our pilot — no card needed
               </span>
             </motion.div>
           </div>
@@ -130,12 +124,12 @@ export default function Hero() {
               transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
               style={{ rotate: "-8deg" }}
             >
-              <div className="text-xs font-bold text-[#8FA3B1] uppercase tracking-wider mb-3">Weekly Milestones</div>
+              <div className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Weekly Milestones</div>
               <div className="flex items-end gap-2 h-16">
-                <div className="w-1/4 bg-[#E8FAF6] h-[40%] rounded-t-md relative"><div className="absolute -top-6 w-full text-center text-[10px] text-[#8FA3B1] font-bold">M</div></div>
-                <div className="w-1/4 bg-[#E8FAF6] h-[60%] rounded-t-md relative"><div className="absolute -top-6 w-full text-center text-[10px] text-[#8FA3B1] font-bold">T</div></div>
-                <div className="w-1/4 bg-[#4A90D9]/80 h-[100%] rounded-t-md relative shadow-[0_0_12px_rgba(74,144,217,0.4)]"><div className="absolute -top-6 w-full text-center text-[10px] text-[#4A90D9] font-bold">W</div></div>
-                <div className="w-1/4 bg-[#E8FAF6] h-[80%] rounded-t-md relative"><div className="absolute -top-6 w-full text-center text-[10px] text-[#8FA3B1] font-bold">T</div></div>
+                <div className="w-1/4 bg-mint h-[40%] rounded-t-md relative"><div className="absolute -top-6 w-full text-center text-[10px] text-muted font-bold">M</div></div>
+                <div className="w-1/4 bg-mint h-[60%] rounded-t-md relative"><div className="absolute -top-6 w-full text-center text-[10px] text-muted font-bold">T</div></div>
+                <div className="w-1/4 bg-blue-400/80 h-[100%] rounded-t-md relative shadow-[0_0_12px_rgba(74,144,217,0.4)]"><div className="absolute -top-6 w-full text-center text-[10px] text-blue-700 font-bold">W</div></div>
+                <div className="w-1/4 bg-mint h-[80%] rounded-t-md relative"><div className="absolute -top-6 w-full text-center text-[10px] text-muted font-bold">T</div></div>
               </div>
             </motion.div>
 
@@ -146,11 +140,11 @@ export default function Hero() {
               style={{ rotate: "-2deg" }}
             >
               {/* Header Gradient Area */}
-              <div className="bg-gradient-to-r from-[#3ECFB2] to-[#4A90D9] p-6 relative overflow-hidden">
+              <div className="bg-gradient-to-r from-teal-400 to-blue-400 p-6 relative overflow-hidden">
                 <div className="absolute inset-0 opacity-20 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiNmZmZmZmYiLz48L3N2Zz4=')] bg-[length:12px_12px]"></div>
                 <div className="flex items-center gap-4 relative z-10">
                   <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center text-4xl shadow-lg border-2 border-white/50">
-                    <User size={36} className="text-[#4A90D9]" />
+                    <User size={36} className="text-blue-700" />
                   </div>
                   <div>
                     <div className="font-nunito font-extrabold text-white text-2xl leading-tight drop-shadow-sm">Leo&apos;s Journey</div>
@@ -160,34 +154,34 @@ export default function Hero() {
               </div>
               
               <div className="p-6 space-y-6">
-                <div className="p-5 bg-[#F5FDFC] rounded-2xl border border-[#E8FAF6] shadow-sm relative">
+                <div className="p-5 bg-canvas rounded-2xl border border-mint shadow-sm relative">
                    <div className="flex justify-between items-center mb-4">
-                     <span className="text-[11px] font-bold text-[#8FA3B1] uppercase tracking-wider">Today&apos;s Module</span>
-                     <span className="flex items-center gap-1.5 bg-[#3ECFB2]/10 px-2 py-1 rounded-md text-[10px] text-[#1A9E8C] font-bold">
-                       <span className="h-1.5 w-1.5 rounded-full bg-[#3ECFB2] animate-pulse"></span> IN PROGRESS
+                     <span className="text-[11px] font-bold text-muted uppercase tracking-wider">Today&apos;s Module</span>
+                     <span className="flex items-center gap-1.5 bg-teal-400/10 px-2 py-1 rounded-md text-[10px] text-teal-700 font-bold">
+                       <span className="h-1.5 w-1.5 rounded-full bg-teal-700 animate-pulse"></span> IN PROGRESS
                      </span>
                    </div>
                    <div className="flex items-center gap-4">
-                     <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#4A90D9]/20 to-[#C4B5FD]/20 flex items-center justify-center border border-white shadow-sm"><Puzzle size={32} className="text-[#4A90D9]" /></div>
+                     <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-400/20 to-lavender-300/20 flex items-center justify-center border border-white shadow-sm"><Puzzle size={32} className="text-blue-700" /></div>
                      <div>
-                       <div className="font-bold text-[#1B2D3E] text-lg">Pattern Recognition</div>
-                       <div className="text-xs text-[#8FA3B1] font-medium mt-1 flex items-center gap-1">
-                         <span className="flex items-center text-[#4A90D9]"><Brain size={16} /></span> Cognitive & Focus
+                       <div className="font-bold text-ink text-lg">Pattern Recognition</div>
+                       <div className="text-xs text-muted font-medium mt-1 flex items-center gap-1">
+                         <span className="flex items-center text-blue-700"><Brain size={16} /></span> Cognitive & Focus
                        </div>
                      </div>
                    </div>
                 </div>
                 <div>
-                  <div className="flex justify-between text-sm font-bold text-[#8FA3B1] mb-3">
+                  <div className="flex justify-between text-sm font-bold text-muted mb-3">
                     <span>Attention Span Goal</span>
-                    <span className="text-[#1A9E8C] bg-[#E8FAF6] px-2.5 py-1 rounded-md shadow-sm">12 mins</span>
+                    <span className="text-teal-700 bg-mint px-2.5 py-1 rounded-md shadow-sm">12 mins</span>
                   </div>
-                  <div className="w-full bg-[#E8FAF6] h-4 rounded-full overflow-hidden shadow-inner relative border border-white">
+                  <div className="w-full bg-mint h-4 rounded-full overflow-hidden shadow-inner relative border border-white">
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: "80%" }}
                       transition={{ duration: 1.5, delay: 0.5, ease: "easeOut" }}
-                      className="bg-gradient-to-r from-[#3ECFB2] to-[#1A9E8C] h-full rounded-full shadow-[0_0_10px_rgba(62,207,178,0.5)]"
+                      className="bg-gradient-to-r from-teal-400 to-teal-700 h-full rounded-full shadow-[0_0_10px_rgba(62,207,178,0.5)]"
                     >
                       <div className="w-full h-full opacity-20 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,#fff_10px,#fff_20px)] animate-[scroll_20s_linear_infinite]"></div>
                     </motion.div>
@@ -198,22 +192,22 @@ export default function Hero() {
 
             {/* Top Right Floating Card - High Contrast ADHD Mode */}
             <motion.div 
-              className="absolute z-30 top-[5%] right-[-5%] md:right-[-18%] w-[210px] bg-[#1B2D3E] border-2 border-[#4A90D9]/30 rounded-2xl p-5 shadow-[0_16px_32px_rgba(27,45,62,0.4)]"
+              className="absolute z-30 top-[5%] right-[-5%] md:right-[-18%] w-[210px] bg-ink border-2 border-blue-400/30 rounded-2xl p-5 shadow-[0_16px_32px_rgba(27,45,62,0.4)]"
               animate={{ y: [-10, 10, -10] }}
               transition={{ repeat: Infinity, duration: 4.5, ease: "easeInOut" }}
               style={{ rotate: "4deg" }}
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="bg-[#4A90D9]/20 text-[#4A90D9] w-8 h-8 rounded-lg flex items-center justify-center border border-[#4A90D9]/50 shadow-inner"><Target size={18} /></div>
+                  <div className="bg-blue-400/20 text-blue-700 w-8 h-8 rounded-lg flex items-center justify-center border border-blue-400/50 shadow-inner"><Target size={18} /></div>
                   <div className="font-nunito font-bold text-white text-base">ADHD Mode</div>
                 </div>
                 {/* Toggle switch UI */}
-                <div className="w-9 h-5 bg-[#3ECFB2] rounded-full p-0.5 shadow-[0_0_8px_rgba(62,207,178,0.4)]">
+                <div className="w-9 h-5 bg-teal-700 rounded-full p-0.5 shadow-[0_0_8px_rgba(62,207,178,0.4)]">
                   <div className="w-4 h-4 bg-white rounded-full translate-x-4 shadow-sm"></div>
                 </div>
               </div>
-              <div className="font-dm-sans text-xs text-[#8FA3B1] font-medium leading-relaxed mt-2 border-t border-white/10 pt-3">
+              <div className="font-dm-sans text-xs text-muted font-medium leading-relaxed mt-2 border-t border-white/10 pt-3">
                 High-stimulation visuals <span className="text-white">disabled</span> for focus.
               </div>
             </motion.div>
@@ -225,13 +219,13 @@ export default function Hero() {
               transition={{ repeat: Infinity, duration: 4, ease: "easeInOut", delay: 2 }}
               style={{ rotate: "-3deg" }}
             >
-              <div className="text-[#FFB020]"><Trophy size={24} /></div>
-              <div className="font-nunito font-bold text-[#1B2D3E] text-sm tracking-wide">Level Up!</div>
+              <div className="text-amber-400"><Trophy size={24} /></div>
+              <div className="font-nunito font-bold text-ink text-sm tracking-wide">Level Up!</div>
             </motion.div>
 
             {/* Bottom Left Floating Pill - Vibrant ABA Skill */}
             <motion.div 
-              className="absolute z-30 bottom-[12%] left-[-5%] md:left-[-20%] bg-gradient-to-r from-[#FF7E6B] to-[#FF9C8F] border-2 border-white rounded-full py-4 px-6 shadow-[0_16px_32px_rgba(255,126,107,0.3)] flex items-center gap-4"
+              className="absolute z-30 bottom-[12%] left-[-5%] md:left-[-20%] bg-gradient-to-r from-coral-400 to-[#FF9C8F] border-2 border-white rounded-full py-4 px-6 shadow-[0_16px_32px_rgba(255,126,107,0.3)] flex items-center gap-4"
               animate={{ y: [8, -8, 8] }}
               transition={{
                 repeat: Infinity,
@@ -255,7 +249,7 @@ export default function Hero() {
             </motion.div>
 
             {/* Background Aesthetic Blur Shape */}
-            <div className="absolute z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] md:w-[400px] aspect-square bg-gradient-to-tr from-[#3ECFB2] via-[#4A90D9] to-[#C4B5FD] rounded-full blur-[80px] opacity-30 mix-blend-multiply"></div>
+            <div className="absolute z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] md:w-[400px] aspect-square bg-gradient-to-tr from-teal-400 via-blue-400 to-lavender-300 rounded-full blur-[80px] opacity-30 mix-blend-multiply"></div>
           </div>
         </motion.div>
       </div>

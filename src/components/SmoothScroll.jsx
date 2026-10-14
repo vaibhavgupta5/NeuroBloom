@@ -4,10 +4,12 @@ import { useEffect } from "react";
 
 export default function SmoothScroll({ children }) {
   useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let instance;
     (async () => {
       try {
         const LocomotiveScroll = (await import("locomotive-scroll")).default;
-        const locomotiveScroll = new LocomotiveScroll({
+        instance = new LocomotiveScroll({
           lenisOptions: {
             wrapper: window,
             content: document.documentElement,
@@ -27,6 +29,7 @@ export default function SmoothScroll({ children }) {
         console.error("Locomotive Scroll initialization failed", error);
       }
     })();
+    return () => instance?.destroy();
   }, []);
 
   return <>{children}</>;

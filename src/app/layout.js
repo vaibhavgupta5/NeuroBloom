@@ -19,11 +19,10 @@ const sora = Sora({
   weight: ['400', '600', '700']
 });
 
-import SmoothScroll from '../components/SmoothScroll';
 
 export const metadata = {
-  title: 'NeuroBloom | Where Every Child\'s Brain Gets to Bloom',
-  description: 'Science-backed, game-based therapy for children on the autism spectrum.',
+  title: 'NeuroBloom — calm, adaptive practice for autistic children',
+  description: 'Short, sensory-friendly practice games, visual supports and a Talk board for autistic children, with progress their parents and therapists can act on.',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -35,16 +34,14 @@ export const metadata = {
 };
 
 export const viewport = {
-  themeColor: '#E8FAF6',
+  themeColor: '#F4FBF9',
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${nunito.variable} ${dmSans.variable} ${sora.variable} font-sans antialiased bg-[#E8FAF6]`}>
-        <SmoothScroll>
-          {children}
-        </SmoothScroll>
+      <body className={`${nunito.variable} ${dmSans.variable} ${sora.variable} font-sans antialiased bg-mint`}>
+        {children}
       </body>
     </html>
   );

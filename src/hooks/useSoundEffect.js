@@ -1,47 +1,46 @@
 "use client";
 
-import { useCallback, useRef } from 'react';
-import { useChildStore } from '../stores/useChildStore';
+import { useCallback, useRef } from "react";
+import { useChildStore } from "../stores/useChildStore";
 
+const TONES = {
+  tap: { from: 520, to: 360, dur: 0.08, gain: 0.12 },
+  success: { from: 520, to: 780, dur: 0.18, gain: 0.12 },
+  gentle: { from: 330, to: 300, dur: 0.15, gain: 0.08 },
+};
+
+/** Soft synthesized UI sounds; silent when the child's profile turns sound effects off. */
 export function useSoundEffect() {
-  const { displaySettings } = useChildStore();
-  const audioCtxRef = useRef(null);
+  const enabled = useChildStore((s) => s.child.sensoryProfile?.sfx);
+  const ctxRef = useRef(null);
 
-  const playClick = useCallback(() => {
-    if (!displaySettings?.soundEnabled) return;
-    
-    try {
-      if (!audioCtxRef.current) {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        audioCtxRef.current = new AudioContext();
+  return useCallback(
+    (kind = "tap") => {
+      if (!enabled) return;
+      try {
+        if (!ctxRef.current) {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) return;
+          ctxRef.current = new Ctx();
+        }
+        const ctx = ctxRef.current;
+        if (ctx.state === "suspended") ctx.resume();
+        const t = TONES[kind] || TONES.tap;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(t.from, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(t.to, ctx.currentTime + t.dur);
+        gain.gain.setValueAtTime(t.gain, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t.dur);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + t.dur);
+      } catch {
+        // audio unavailable
       }
-      
-      const ctx = audioCtxRef.current;
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
-
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      
-      // Playful pop sound
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(600, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.1);
-      
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-      
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.1);
-    } catch (e) {
-      // Ignore audio context errors silently
-    }
-  }, [displaySettings?.soundEnabled]);
-
-  return playClick;
+    },
+    [enabled]
+  );
 }

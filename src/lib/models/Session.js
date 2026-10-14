@@ -17,6 +17,17 @@ const SessionSchema = new mongoose.Schema(
     outcome: { type: String, enum: ["completed", "abandoned"], default: "completed" },
     moodBefore: { type: String, default: null }, // moodId at session start
     wordsLearned: { type: Number, default: 0 },  // word-match only
+    level: { type: Number, default: 1 },
+    // promptLevel: 0 independent, 1 verbal, 2 highlight, 3 reduced choices, 4 modelled
+    trials: [
+      {
+        _id: false,
+        itemId: { type: String },
+        correct: { type: Boolean },
+        latencyMs: { type: Number },
+        promptLevel: { type: Number, default: 0 },
+      },
+    ],
     // After-game camera emotion summary (written once at session end; snapshots
     // are never stored here — they live only on LiveSession)
     emotionSummary: {

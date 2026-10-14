@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef } from "react";
 
 const THROTTLE_MS = 1500;
+const HEARTBEAT_MS = 5000;
 
 /**
  * Throttled telemetry emitter for child games. sendTelemetry(data) POSTs to
@@ -14,8 +15,11 @@ export function useTelemetryEmitter() {
   const pending = useRef(null);
   const timer = useRef(null);
 
+  const lastPayload = useRef(null);
+
   const post = useCallback(async (data) => {
     lastSentAt.current = Date.now();
+    lastPayload.current = data.status === "idle" ? null : data;
     try {
       await fetch("/api/telemetry", {
         method: "POST",
@@ -46,19 +50,29 @@ export function useTelemetryEmitter() {
     [post]
   );
 
-  const flushTelemetry = useCallback(() => {
+  const flushTelemetry = useCallback((data) => {
     if (timer.current) {
       clearTimeout(timer.current);
       timer.current = null;
     }
-    if (pending.current) post(pending.current);
+    const payload = data ?? pending.current;
+    pending.current = null;
+    if (payload) post(payload);
   }, [post]);
 
+  // Keeps the live session fresh while the child is thinking (no state changes)
   useEffect(() => {
+    const beat = setInterval(() => {
+      if (lastPayload.current && Date.now() - lastSentAt.current >= HEARTBEAT_MS) {
+        const { snapshotFrame: _frame, ...rest } = lastPayload.current;
+        post(rest);
+      }
+    }, HEARTBEAT_MS);
     return () => {
+      clearInterval(beat);
       if (timer.current) clearTimeout(timer.current);
     };
-  }, []);
+  }, [post]);
 
   return { sendTelemetry, flushTelemetry };
 }

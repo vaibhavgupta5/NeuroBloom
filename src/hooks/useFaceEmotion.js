@@ -3,28 +3,36 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { interpretBlendshapes } from "../lib/emotionUtils";
 
-const SNAPSHOT_INTERVAL_MS = 2_500; // single frame snapshot pushed every 2.5s for live observer
-const SMOOTHING_WINDOW = 10; // detections averaged before an emotion change
+const SNAPSHOT_INTERVAL_MS = 2_500;
+const SMOOTHING_WINDOW = 10;
+const NO_FACE_FRAMES = 20; // ~0.7s without a face clears the estimate
+const SCORES_THROTTLE_MS = 150;
 const MPS_VERSION = "1.0.1"; // keep in sync with package.json @mediapipe/tasks-vision
 
 /**
  * Camera emotion pipeline (MediaPipe FaceLandmarker).
  *
- * PRIVACY: no video is ever recorded or stored. The image data produced
- * is a single 160x120 JPEG (base64) captured every 2.5 seconds — each new
- * frame REPLACES the previous one.
+ * PRIVACY: no video is recorded or stored. Only when captureFrames is true
+ * (parent opted into live snapshots) a single 160x120 JPEG is produced every
+ * 2.5s, each one replacing the last.
  *
- * Permission flow: requestCamera() requests getUserMedia. If permission is denied,
- * status becomes 'denied' and the games fall back to AUTO MODE.
- *
- * Returns { status, emotion, emotionConfidence, snapshot, requestCamera, stopCamera }
- *   status ∈ 'idle' | 'requesting' | 'granted' | 'denied' | 'unsupported'
+ * emotion is null whenever there is no face or no model: never a guess.
+ * status ∈ 'idle' | 'requesting' | 'granted' | 'denied' | 'unsupported' | 'unavailable'
  */
-export function useFaceEmotion() {
+export function useFaceEmotion({ captureFrames = false } = {}) {
   const [status, setStatus] = useState("idle");
   const [emotion, setEmotion] = useState(null);
   const [emotionConfidence, setEmotionConfidence] = useState(0);
   const [snapshot, setSnapshot] = useState(null);
+  const [scores, setScores] = useState(null);
+  const [faceVisible, setFaceVisible] = useState(false);
+
+  const captureFramesRef = useRef(captureFrames);
+  const noFaceCountRef = useRef(0);
+  const lastScoresAtRef = useRef(0);
+  useEffect(() => {
+    captureFramesRef.current = captureFrames;
+  }, [captureFrames]);
 
   const videoRef = useRef(null);
   const snapCanvasRef = useRef(null);
@@ -78,10 +86,25 @@ export function useFaceEmotion() {
           lastVideoTimeRef.current = video.currentTime;
           try {
             const result = landmarker.detectForVideo(video, performance.now());
-            if (result.faceLandmarks && result.faceLandmarks.length > 0) {
-              const reading = result.faceBlendshapes?.[0]?.categories
-                ? interpretBlendshapes(result.faceBlendshapes[0].categories)
-                : { emotion: "happy", confidence: 0.85, scores: {} };
+            const categories = result.faceLandmarks?.length ? result.faceBlendshapes?.[0]?.categories : null;
+            if (!categories) {
+              noFaceCountRef.current += 1;
+              if (noFaceCountRef.current === NO_FACE_FRAMES && mountedRef.current) {
+                windowRef.current = [];
+                setFaceVisible(false);
+                setEmotion(null);
+                setEmotionConfidence(0);
+                setScores(null);
+              }
+            } else {
+              noFaceCountRef.current = 0;
+              const reading = interpretBlendshapes(categories);
+              const nowMs = performance.now();
+              if (mountedRef.current && nowMs - lastScoresAtRef.current > SCORES_THROTTLE_MS) {
+                lastScoresAtRef.current = nowMs;
+                setScores(reading.scores);
+                setFaceVisible(true);
+              }
 
               const win = windowRef.current;
               win.push(reading);
@@ -107,9 +130,8 @@ export function useFaceEmotion() {
           }
         }
 
-        // Single-frame camera snapshot every 2.5s (replaces previous one)
         const now = Date.now();
-        if (now - lastSnapshotAtRef.current >= SNAPSHOT_INTERVAL_MS) {
+        if (captureFramesRef.current && now - lastSnapshotAtRef.current >= SNAPSHOT_INTERVAL_MS) {
           lastSnapshotAtRef.current = now;
           const snapCanvas = snapCanvasRef.current;
           if (snapCanvas && video.readyState >= 2) {
@@ -170,7 +192,14 @@ export function useFaceEmotion() {
           outputFacialTransformationMatrixes: false,
         });
       } catch (mpErr) {
-        console.warn("MediaPipe model initialization notice:", mpErr?.message || mpErr);
+        console.warn("MediaPipe model could not load:", mpErr?.message || mpErr);
+      }
+
+      if (!landmarker) {
+        for (const track of stream.getTracks()) track.stop();
+        streamRef.current = null;
+        if (mountedRef.current) setStatus("unavailable");
+        return;
       }
 
       if (!mountedRef.current) {
@@ -199,9 +228,10 @@ export function useFaceEmotion() {
       await video.play();
       lastVideoTimeRef.current = -1;
       lastSnapshotAtRef.current = 0; // Trigger immediate initial frame capture
+      noFaceCountRef.current = 0;
       setStatus("granted");
-      if (!emotion) setEmotion("happy");
-      setEmotionConfidence(0.88);
+      setEmotion(null);
+      setEmotionConfidence(0);
       rafRef.current = requestAnimationFrame(detectLoop);
     } catch (err) {
       if (streamRef.current) {
@@ -215,7 +245,7 @@ export function useFaceEmotion() {
         setStatus("unsupported");
       }
     }
-  }, [status, detectLoop, emotion]);
+  }, [status, detectLoop]);
 
   const stopCamera = useCallback(() => {
     teardown();
@@ -224,8 +254,10 @@ export function useFaceEmotion() {
       setEmotion(null);
       setEmotionConfidence(0);
       setSnapshot(null);
+      setScores(null);
+      setFaceVisible(false);
     }
   }, [teardown]);
 
-  return { status, emotion, emotionConfidence, snapshot, requestCamera, stopCamera };
+  return { status, emotion, emotionConfidence, snapshot: captureFrames ? snapshot : null, scores, faceVisible, requestCamera, stopCamera };
 }
